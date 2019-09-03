@@ -1,0 +1,411 @@
+---
+title: "Statistical Learning Experiment"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(gplots)
+library(ggplot2)
+library(BayesFactor)
+library(lsr)
+library("ggpubr")
+library("gridExtra")
+library("reshape2")
+library(plyr)
+library(lme4)
+dodge <- position_dodge(width = 0.9)
+easyColour <- "#00AAFF"
+hardColour <- "#000099"
+novelAColour <- "springgreen3"
+firstColour <- "mediumpurple"
+secondColour <- "mediumpurple4"
+sameColour <- "red"
+differentColour <- "red4"
+```
+
+```{r, echo=FALSE}
+load("fulldataset.RData")
+d1novelA <- subset(d1all,SL1condition=="UnfSimple")
+d1familiar <- subset(d1all,SL1condition=="Familiar")
+d1novelB <- subset(d1all, SL1condition=="Unfamiliar")
+n1Amale <- sum(d1novelA$gender=="male",na.rm=TRUE)
+n1Ausa <- sum(d1novelA$country=="USA",na.rm=TRUE)
+n <- nrow(d)
+nmale <- sum(d$gender=="male",na.rm=TRUE)
+nusa <- sum(d$country=="USA",na.rm=TRUE)
+dlEasy <- subset(dl,SLcondition=="Familiar")
+dlHard <- subset(dl,SLcondition=="Unfamiliar")
+d2easy <- subset(d,SL2condition=="Familiar")
+d2hard <- subset(d,SL2condition=="Unfamiliar")
+n2easy <- nrow(d2easy)
+n2hard <- nrow(d2hard)
+```
+
+# Summary of datasets
+
+For Part 1, 160 people were run on AMT in an experiment that took 15-20 minutes and paid \$3.40USD. Before analysing the data 14 were excluded for getting less than three of the four words in the sequence right (9 in **Familiar** and 5 in **Unfamiliar**). For Part 2, the remaining 146 were invited back to do a 20-minute follow-up that paid \$4USD. Of those, 135 returned (a retention rate of `r 100*round(135/146,1)`%). Three of them reported less than three words in the sequence and were excluded. This left `r n` people in the dataset, with
+`r sum(d$SL2condition=="Familiar")` in the **Familiar** condition and `r sum(d$SL2condition=="Unfamiliar")` in the **Unfamiliar** condition. 
+Across the whole dataset, `r nmale` (i.e., `r round(100*nmale/n,1)`%) of them were male and `r nusa` (i.e., `r round(100*nusa/n,1)`%) were from the US. Ages ranged from `r min(d$age,na.rm=TRUE)` to `r max(d$age,na.rm=TRUE)` with a mean of `r round(mean(d$age,na.rm=TRUE),1)`.
+
+```{r, echo=FALSE}
+# remove outliers from mean for SL and PF tasks
+#    4SD: one outlier, 387.5 (PF1)
+#    3SD: five removed: 289.38 and 387.50 (PF1), 302.50 301.25 281.25 (PF2)
+dl$PFpauseavg[dl$PFpauseavg>mean(dl$PFpauseavg)+4*sd(dl$PFpauseavg)] <- NA
+```
+
+# Statistical Learning Tests
+
+Our first step is just to make sure people are behaving sensibly on the SL tasks, and to check if there are differences in overall performance by condition. 
+
+## Part 1
+
+First let's look at the histograms of all responses to determine whether they look like those reported in Seigelman et al., 2017, and to see whether the data look normal. This includes the **Familiar** and **Unfamiliar** conditions, as well as **unfSimple** (explained below).
+
+\vspace{16pt}
+```{r, echo=FALSE, fig.height=3, fig.width=9.5, fig.align='center'}
+par(mfrow=c(1,3))
+hist(dlEasy$SLcorrect*42,col=easyColour,breaks=15,xlim=c(0,42),
+     main="SL: Familiar",xlab="# correct")
+hist(dlHard$SLcorrect*42,col=hardColour,breaks=15,xlim=c(0,42),
+     main="SL: Unfamiliar",xlab="# correct")
+hist(d1all$SL1correct*42,col=novelAColour,breaks=15,xlim=c(0,42),
+     main="SL: UnfSimple",xlab="# correct")
+```
+\vspace{16pt}
+These look pretty reasonable. Is the accuracy different between conditions?
+\vspace{16pt}
+```{r, echo=FALSE, fig.height=3, fig.width=4, fig.align='center'}
+newdl <- aggregate(dl$SLcorrect, by=list(condition = dl$SLcondition), 
+                   FUN = function(x) c(mean=mean(x), sd=sd(x), n=length(x)))
+newdl <- do.call(data.frame, newdl)
+newdl$se <- newdl$x.sd / sqrt(newdl$x.n)
+colnames(newdl) <- c("condition", "mean", "sd", "n", "se")
+
+dodge <- position_dodge(width = 0.9)
+errors <- aes(ymax = newdl$mean + newdl$se, ymin = newdl$mean - newdl$se)
+p <- ggplot(data = newdl, aes(x = condition, y = mean, fill = condition))
+p + geom_bar(stat = "identity", position = dodge, colour="black") +
+  geom_errorbar(errors, position = dodge, width = 0.25) + 
+  labs(y = "SLscore") + 
+  ggtitle("(a) Statistical learning") +
+  coord_cartesian(ylim=c(0.4,0.7)) +
+  scale_fill_manual(values=c(easyColour,hardColour)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+```
+\vspace{16pt}
+It looks like indeed there is a difference in performance. To evaluate this statistically we ran a t-test with accuracy as our outcome variable and condition as predictor. 
+
+```{r echo=FALSE, results="hide"}
+tt <- t.test(SLcorrect ~ SLcondition, data=dl)
+ttd <- cohensD(SLcorrect ~ SLcondition, data=dl)
+bf <- ttestBF(formula = SLcorrect ~ SLcondition, data=dl)
+reportedBF <- exp(1)^bf@bayesFactor$bf
+# compare to chance
+oet <- t.test(dl$SLcorrect[dl$SLcondition=="Unfamiliar"],mu=16.75/42)
+doet <- cohensD(x=dl$SLcorrect[dl$SLcondition=="Unfamiliar"],y=16.75/42)
+oht <- t.test(dl$SLcorrect[dl$SLcondition=="Familiar"],mu=16.75/42)
+doht <- cohensD(x=dl$SLcorrect[dl$SLcondition=="Familiar"],y=16.75/42)
+```
+
+Performance in both conditions is different from chance (**Familiar**: t(`r round(oht$parameter,1)`)= `r round(oht$statistic,2)`, p=`r round(oht$p.value,4)`, d=`r round(doht,3)`; **Unfamiliar**: t(`r round(oet$parameter,1)`)= `r round(oet$statistic,2)`, p=`r round(oet$p.value,4)`, d=`r round(doet,3)`). 
+
+The results of the t-test are also significant (t(`r round(tt$parameter,1)`)=`r round(tt$statistic,2)`, p=`r round(tt$p.value,4)`, d=`r round(ttd,3)`). A Bayesian t-test with default priors for effect size finds that the data were `r reportedBF` in favour of the alternative hypothesis (i.e., were `r reportedBF` times more likely to occur under the model that performance is different by condition).
+
+We might also care about whether people's behaviour showed the same *pattern* as Siegelman et al., 2017: that is, were the test items that their participants found hard the same test items that our participants found hard? We can evaluate this by calculating the correlation between performance on each item between them (which they reported) and our data. It is evident that all correlations are highly significant.
+\vspace{16pt}
+```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center'}
+p1 <- ggscatter(SL1, x="Base", y="Familiar", add="reg.line", cor.coef=TRUE, size=2,
+                cor.method = "pearson", xlab = "Siegelman items", ylab="Our data",
+                cor.coef.coord=c(0.42,0.65))
+p1 <- p1 + ggtitle("Familiar") + theme(plot.title = element_text(hjust=0.5))
+p2 <- ggscatter(SL1, x="Base", y="Unfamiliar", add="reg.line", cor.coef=TRUE, size=2,
+                cor.method = "pearson", xlab = "Siegelman items", ylab="Our data",
+                cor.coef.coord=c(0.42,0.65))
+p2 <- p2 + ggtitle("Unfamiliar") + theme(plot.title = element_text(hjust=0.5))
+p3 <- ggscatter(SL1, x="Base", y="UnfSimple", add="reg.line", cor.coef=TRUE, size=2,
+                cor.method = "pearson", xlab = "Siegelman items", ylab="Our data",
+                cor.coef.coord=c(0.42,0.65))
+p3 <- p3 + ggtitle("UnfSimple") + theme(plot.title = element_text(hjust=0.5))
+grid.arrange(p1,p2,p3,ncol=3)
+```
+
+
+# Perceptual Fluency Tasks
+
+So far it seems that the statistical learning tasks are behaving as expected, and we're getting significant differences in performances based on the visual complexity / familiarity of the stimuli involved. Let's also check that the perceptual fluency tasks are behaving in a sensible fashion. This is a bit harder because they are new tasks so there's no published literature to compare to, but as a first stab we can look at what happens to the duration that the target item flashes over the course of the task (which I'll refer to as the *lag time*). Remember that it gets faster when people are more accurate, so we should expect that in easier tasks it should end up being on average faster. We should also expect it to stabilise somewhere.
+
+We can make two comparisons. First, remember that each person saw two perceptual fluency tasks in a row. We might be curious about whether performance changes between the tasks, either due to fatigue or practice effects. Thus, the figure on the left below shows overall performance on the First and Second task. Second, some people saw perceptual fluency tasks with **Familiar** items, and some with **Unfamiliar** items. If the length that the item flashes is really related to their complexity, we would expect that in the **Familiar** condition it doesn't need to flash as long. This is shown in the figure on the right.
+
+```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center'}
+# first do by order
+PFtimes <- PFmeans
+PFtimesSD <- PFsds
+PFtimes$Familiar <- NULL
+PFtimes$Unfamiliar <- NULL
+PFtimesSD$Familiar <- NULL
+PFtimesSD$Unfamiliar <- NULL
+PFtimes$trial <- seq(1,48)
+PFtimesSD$trial <- seq(1,48)
+colnames(PFtimes) <- c("First","Second","Trial")
+colnames(PFtimesSD) <- c("First","Second","Trial")
+timecols <- c(firstColour,secondColour)
+PFtimes <- melt(PFtimes,id.vars="Trial",variable.name="Order")
+PFtimesSD <- melt(PFtimesSD,id.vars="Trial",variable.name="Order")
+timese <- PFtimesSD$value/sqrt(n)
+p1 <- ggplot(data=PFtimes, aes(x=Trial, y=value, group=Order, colour=Order)) 
+p1 <- p1 + geom_errorbar(aes(ymin=value-timese, ymax=value+timese), 
+                position=dodge, width=0.25) +
+  geom_line(size=0.5) + scale_colour_manual(values=timecols) +
+  labs(y = "PFscore", x="Trial") + 
+  ggtitle("Time course") +
+  coord_cartesian(ylim=c(50,250)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(0.9)),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.x=element_text(size = rel(1.1)), 
+        axis.title.y=element_text(size = rel(1.1)), 
+        legend.position="none",
+        panel.background = element_rect(fill = "white", colour = "black"))
+
+PFcondition <- PFmeans
+PFconditionSD <- PFsds
+PFcondition$PF1 <- NULL
+PFcondition$PF2 <- NULL
+PFconditionSD$PF1 <- NULL
+PFconditionSD$PF2 <- NULL
+PFcondition$trial <- seq(1,48)
+PFconditionSD$trial <- seq(1,48)
+colnames(PFcondition) <- c("Familiar","Unfamiliar","Trial")
+colnames(PFconditionSD) <- c("Familiar","Unfamiliar","Trial")
+condcols <- c(easyColour,hardColour)
+PFcondition <- melt(PFcondition,id.vars="Trial",variable.name="Condition")
+PFconditionSD <- melt(PFconditionSD,id.vars="Trial",variable.name="Condition")
+condse <- PFconditionSD$value/sqrt(c(rep(n2easy,48),rep(n2hard,48)))
+p2 <- ggplot(data=PFcondition, aes(x=Trial, y=value, group=Condition, colour=Condition)) 
+p2 <- p2 + geom_errorbar(aes(ymin=value-condse, ymax=value+condse), 
+                position=dodge, width=0.25) +
+  geom_line(size=0.5) + scale_colour_manual(values=condcols) +
+  labs(y = "PFscore", x="Trial") + 
+  ggtitle("Time course") +
+  coord_cartesian(ylim=c(50,250)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(0.9)),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.x=element_text(size = rel(1.1)), 
+        axis.title.y=element_text(size = rel(1.1)), 
+        legend.position = "none",
+        panel.background = element_rect(fill = "white", colour = "black"))
+grid.arrange(p1,p2,ncol=2)
+```
+\vspace{16pt}
+
+Some things are immediately obvious. First, reassuringly, the time each stimulus flashed does go down, and doesn't bobble around. Second, it appears as though there are differences in both order (people are faster for the first task, so fatigue may be a factor) and condition (people are faster for the **Familiar** items, which is nice). However, we don't know if these effects are significant.
+
+Unfortunately, we can't run statistical tests on multiple different trials, because the trials are all very non-trivially dependent on each other. We therefore feed each person's average lag time in and test whether these differ by order or condition.  
+\vspace{16pt}
+
+```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center'}
+# do by condition
+easy <- dl$PFpauseavg[dl$PFtype=="Familiar"]
+hard <- dl$PFpauseavg[dl$PFtype=="Unfamiliar"]
+means <- c(mean(easy,na.rm=TRUE),mean(hard,na.rm=TRUE))
+ses <- c(sd(easy,na.rm=TRUE)/sqrt(length(easy)),sd(hard,na.rm=TRUE)/sqrt(length(hard)))
+condition <- c("Familiar","Unfamiliar")
+PFcondShort <- data.frame(condition,means,ses)
+errors <- aes(ymax = PFcondShort$mean + PFcondShort$ses, 
+              ymin = PFcondShort$mean - PFcondShort$ses)
+pa2 <- ggplot(data=PFcondShort, aes(x=condition, y=means, fill=condition))
+pa2 <- pa2 + geom_bar(stat = "identity", position = dodge, colour="black") +
+  geom_errorbar(errors, position = dodge, width = 0.25) + 
+  labs(y = "PFscore") + 
+  ggtitle("PF by condition") +
+  coord_cartesian(ylim=c(50,150)) +
+  scale_fill_manual(values=c(easyColour,hardColour)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+
+  #  do by order
+first <- dl$PFpauseavg[dl$session=="1"]
+second <- dl$PFpauseavg[dl$session=="2"]
+means <- c(mean(first,na.rm=TRUE),mean(second,na.rm=TRUE))
+ses <- c(sd(first,na.rm=TRUE)/sqrt(length(first)),sd(second,na.rm=TRUE)/sqrt(length(second)))
+order <- c("First","Second")
+PForderShort <- data.frame(order,means,ses)
+errors <- aes(ymax = PForderShort$mean + PForderShort$ses, 
+              ymin = PForderShort$mean - PForderShort$ses)
+pa1 <- ggplot(data=PForderShort, aes(x=order, y=means, fill=order))
+pa1 <- pa1 + geom_bar(stat = "identity", position = dodge, colour="black") +
+  geom_errorbar(errors, position = dodge, width = 0.25) + 
+  labs(y = "PFscore") + 
+  ggtitle("PF by order") +
+  coord_cartesian(ylim=c(50,150)) +
+  scale_fill_manual(values=c(firstColour,secondColour)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+grid.arrange(pa1,pa2,ncol=2)
+```
+\vspace{16pt}
+```{r echo=FALSE, results="hide"}
+## t-tests
+pfo <- t.test(first,second)
+pfod <- cohensD(first,second)
+pfc <- t.test(easy,hard)
+pfcd <- cohensD(easy,hard)
+pfpf <- cor.test(first,second)
+```
+
+Is this significant? In order to evaluate this, I ran two separate t-tests, one looking at lagtime by test order (i.e., corresponding to the figure on the left) and one at lagtime by condition (i.e., corresponding to the figure on the right). Order was not significant (t(`r round(pfo$parameter,1)`)=`r round(pfo$statistic,2)`, p=`r round(pfo$p.value,4)`, d=`r round(pfod,3)`) but condition was (t(`r round(pfc$parameter,1)`)=`r round(pfc$statistic,2)`, p=0.0006, d=`r round(pfcd,3)`).
+This is pretty cool: it means that, as predicted, people did better on the perceptual fluency task when the stimulus items involved were **Familiar** ones. That said, performance on the two back-to-back perceptual fluency tasks was of course also highly correlated with one another (r = `r round(pfpf$estimate,4)`, p<0.0001).
+
+Finally, next, we really get to look at the meat of our experiment: how these measures relate to each other. 
+
+# Relation of statistical learning to statistical learning
+
+Our first question is how people's statistical learning performance on the two separate days compares to each other. As you'll recall, some people saw the **Same** kinds of stimulus sets on both days (either both **Familiar** or both **Unfamiliar**) and some people saw **Different** types of stimulus sets (some saw **Familiar** on Session 1 and **Unfamiliar** on Session 2, and some vice-versa). In no case did anybody see the same *items* on both days -- even if it was the same kind of stimulus, the items were different. Thus, for instance, if your stimulus contained a star on Session 1 then it did not contain a star on Session 2. This means that any correlation in performance cannot be explained by trivial familiarity with the specific stimulus items.
+
+Our key question is whether people who saw the **Same** kind of stimulus set on both days had a higher correlation in their statistical learning accuracy between tasks than people who saw **Different** stimulus sets. If individual differences in performance on this task are *just* about statistical learning, these correlations should be the same, since the underlying statistical learning is exactly the same -- all that differs is the stimulus type. If, on the other hand, perceptual fluency plays an important role, then one would expect a larger correlation for people who saw the **Same** stimulus sets and a smaller (or nonexistent) one for people who saw **Different** ones. These correlations are shown below. 
+\vspace{16pt}
+```{r, echo=FALSE, fig.height=3.3, fig.width=8, fig.align='center'}
+First <- d$SL1correct[d$condition=="same"]
+Second <- d$SL2correct[d$condition=="same"]
+same <- data.frame(First,Second)
+corSame = cor.test(First, Second, method="pearson")
+rSame = corSame$estimate
+nSame = sum(complete.cases(First,Second))
+p1 <- ggscatter(same, x="First", y="Second", add="reg.line", cor.coef=TRUE, 
+                cor.method = "pearson", xlab = "Session 1", ylab="Session 2", size=2, 
+                cor.coef.coord=c(0.8,0.46))
+p1 <- p1 + ggtitle("SAME familiarity") + theme(plot.title = element_text(hjust=0.5))
+First <- d$SL1correct[d$condition=="different"]
+Second <- d$SL2correct[d$condition=="different"]
+different <- data.frame(First,Second)
+corDifferent = cor.test(First, Second, method="pearson")
+rDifferent = corDifferent$estimate
+nDifferent = sum(complete.cases(First,Second))
+p2 <- ggscatter(different, x="First", y="Second", add="reg.line",
+                cor.coef=TRUE, cor.method = "pearson", xlab = "Session 1", ylab="Session 2",
+                size=2, cor.coef.coord=c(0.35,0.9))
+p2 <- p2 + ggtitle("DIFFERENT familiarity") + theme(plot.title = element_text(hjust=0.5))
+grid.arrange(p1,p2,ncol=2)
+
+# are these significant using fisher transformation
+fisherZ = ((0.5*log((1+rSame)/(1-rSame)))-(0.5*log((1+rDifferent)/(1-rDifferent))))/((1/(nSame-3))+(1/(nDifferent-3)))^0.5
+fisherP = (2*(1-pnorm(abs(fisherZ))))
+```
+\vspace{16pt}
+
+It is indeed apparent that **Same** appears to correlate with each other much better than **Different**. We can statistically test this with the Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`. So these are indeed significantly different.
+
+# Relation of statistical learning to perceptual fluency
+
+Given the hypotheses of our study, we're also interested in determining whether performance on the perceptual fluency task predicts performance on the statistical learning task. I set it up so that for everyone, the first perceptual fluency task used the same stimuli as the statistical learning test on Session 1. Conversely, the second perceptual fluency task used the same stimuli as the stastistical learning test on Session 2. The obvious thing to do first is just to pool everything together, and see to what extent each perceptual fluency task predicts statistical learning. That is shown below.
+\vspace{16pt}
+```{r, echo=FALSE, fig.height=2.5, fig.width=4, fig.align='center', warning=FALSE}
+allpf <- dl$PFpauseavg
+allsl <- dl$SLcorrect
+corrs <- data.frame(allpf,allsl)
+p1 <- ggscatter(corrs, x="allpf", y="allsl", add="reg.line", cor.coef=TRUE, 
+                size=2, cor.method = "pearson", xlab = "PFscore", 
+                ylab="SLscore",cor.coef.coord=c(230,0.8))
+p1 <- p1 + ggtitle("PF to SL") + theme(plot.title = element_text(hjust=0.5))
+p1
+```
+\vspace{16pt}
+So having a shorter lag time on the perceptual fluency task is correlated with being more accurate on the statistical learning task. We can also break it down by whether the stimuli were **Familiar** or **Unfamiliar**. .
+\vspace{16pt}
+```{r, echo=FALSE, fig.height=2.5, fig.width=7, fig.align='center', warning=FALSE}
+fampf <- dl$PFpauseavg[dl$PFtype=="Familiar"]
+famsl <- dl$SLcorrect[dl$PFtype=="Familiar"]
+famcorrs <- data.frame(fampf,famsl)
+p2 <- ggscatter(famcorrs, x="fampf", y="famsl", add="reg.line", cor.coef=TRUE, 
+                size=2, cor.method = "pearson", xlab = "Perceptual fluency", 
+                ylab="Statistical learning",cor.coef.coord=c(230,0.8))
+p2 <- p2 + ggtitle("PF to SL: Familiar") + theme(plot.title = element_text(hjust=0.5))
+
+novpf <- dl$PFpauseavg[dl$PFtype=="Unfamiliar"]
+novsl <- dl$SLcorrect[dl$PFtype=="Unfamiliar"]
+novcorrs <- data.frame(novpf,novsl)
+p3 <- ggscatter(novcorrs, x="novpf", y="novsl", add="reg.line", cor.coef=TRUE, 
+                size=2, cor.method = "pearson", xlab = "Perceptual fluency", 
+                ylab="Statistical learning",cor.coef.coord=c(230,0.8))
+p3 <- p3 + ggtitle("PF to SL: Unfamiliar") + theme(plot.title = element_text(hjust=0.5))
+grid.arrange(p2,p3,ncol=2)
+```
+\vspace{16pt}
+This is kind of interesting. It's cool that the PF test does a reasonable job predicting statistical learning performance. It's also interesting that the relationship is stronger for the **Unfamiliar** stimuli (possibly because the **Familiar** ones are so overlearned there's less room for individual differences?). It should be noted that the strength of the relationship between perceptual fluency and statistical learning is less strong than between statistical learning on two consecutive days, even when the stimuli are different. So that's an indication that there is some important component of statistical learning the perceptual fluency doesn't touch. Still, it's kind of impressive how much does just come down to perceptual fluency.
+
+## Overall
+
+(1) People don't do as well on statistical learning tasks that are identical in terms of statistical complexity but that have more complex stimuli. (2) Statistical learning performance from one day to another is more highly correlated when the items involved are similar, even though in both cases the statistical complexity is the same. (3) Performance on an independent task of perceptual fluency predicts accuracy on the statistical learning task from a previous day.
+
+## Compare to simpler unknown stimuli
+
+Is this familiarity or complexity? Let's compare SL performance in the **Familiar** and **Unfamiliar** conditions to a condition that uses unfamiliar stimuli that are also substantially simpler visually. For this we ran 80 people on AMT in exactly the same experiment but with different stimuli, which again took 15-20 minutes and paid \$3.40USD. Before analysing the data 6 were excluded for getting less than three of the four words in the sequence right. This left `r nrow(d1novelA)` people in the dataset, in what well call the **unfSimple** condition (to contrast with the previous unfamiliar hard condition). In this condition, `r n1Amale` (i.e., `r round(100*n1Amale/nrow(d1novelA),1)`%) were male and `r n1Ausa` (i.e., `r round(100*n1Ausa/nrow(d1novelA),1)`%) were from the US. Ages ranged from `r min(d1novelA$age,na.rm=TRUE)` to `r max(d1novelA$age,na.rm=TRUE)` with a mean of `r round(mean(d1novelA$age,na.rm=TRUE),1)`.
+
+Is the accuracy different between conditions? To look at this we compare SL performance on all of the *first session* datasets (not like the one before for **Familiar** and **Unfamiliar**, which included both days). The reason we just look at first session is to make **unfSimple** comparable to the others, since it had only one session -- it doesn't matter much but seems more principled. Anyway, the result is shown below.
+\vspace{10pt}
+```{r, echo=FALSE, fig.height=3, fig.width=4.5, fig.align='center'}
+newd1 <- aggregate(d1all$SL1correct, by=list(condition = d1all$SL1condition), 
+                   FUN = function(x) c(mean=mean(x), sd=sd(x), n=length(x)))
+newd1 <- do.call(data.frame, newd1)
+newd1$se <- newd1$x.sd / sqrt(newd1$x.n)
+colnames(newd1) <- c("condition", "mean", "sd", "n", "se")
+
+dodge <- position_dodge(width = 0.9)
+errors <- aes(ymax = newd1$mean + newd1$se, ymin = newd1$mean - newd1$se)
+p <- ggplot(data = newd1, aes(x = condition, y = mean, fill = condition))
+p + geom_bar(stat = "identity", position = dodge, colour="black") +
+  geom_errorbar(errors, position = dodge, width = 0.25) + 
+  labs(y = "Proportion correct") + 
+  ggtitle("SL Performance by Condition") +
+  coord_cartesian(ylim=c(0.4,0.7)) +
+  scale_fill_manual(values=c(easyColour,novelAColour,hardColour)) +
+  theme(axis.text.y=element_text(size = rel(0.9)), axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)), axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+```
+\vspace{16pt}
+It looks like indeed there is a difference in performance. To evaluate this statistically we ran a one-way ANOVA with accuracy as our outcome variable and condition as predictor.
+
+```{r echo=FALSE, results="hide"}
+# compare to chance
+onat <- t.test(d1novelA$SL1correct,mu=16.75/42)
+donat <- cohensD(x=d1novelA$SL1correct,y=16.75/42)
+## One-way ANOVA with correct as outcome and condition as predictor
+m <- aov(SL1correct ~ SL1condition, data=d1all)
+## Post-hoc tests
+tfa <- t.test(d1familiar$SL1correct,d1novelA$SL1correct)
+tfb <- t.test(d1familiar$SL1correct,d1novelB$SL1correct)
+tab <- t.test(d1novelA$SL1correct,d1novelB$SL1correct)
+# effect size
+etam <- etaSquared(m)
+tfad <- cohensD(d1familiar$SL1correct,d1novelA$SL1correct)
+tfbd <- cohensD(d1familiar$SL1correct,d1novelB$SL1correct)
+tabd <- cohensD(d1novelA$SL1correct,d1novelB$SL1correct)
+```
+
+The results of the ANOVA are significant (F(`r summary(m)[[1]][["Df"]][1]`,`r summary(m)[[1]][["Df"]][2]`)=`r round(summary(m)[[1]][["F value"]][1],4)`, p=`r round(summary(m)[[1]][["Pr(>F)"]][1],4)`, etaSq = 0.0404). We did three post-hoc t-tests. The difference between **Familiar** and **unfSimple** was significant (t(`r round(tfa$parameter,1)`)=`r round(tfa$statistic,2)`, p=`r round(tfa$p.value,4)`, d=`r round(tfad,3)`), as was the difference between **Familiar** and **Unfamiliar** (t(`r round(tfb$parameter,1)`)=`r round(tfb$statistic,2)`, p=`r round(tfb$p.value,4)`, d=`r round(tfbd,3)`). However, the two unfamiliar conditions were not significantly different from each other (t(`r round(tab$parameter,1)`)=`r round(tab$statistic,2)`, p=`r round(tab$p.value,4)`, d=`r round(tabd,3)`).
+
+
