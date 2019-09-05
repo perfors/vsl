@@ -32,8 +32,6 @@ Before analysing the data and as preregistered, `r nBad` people were excluded fo
 
 Our first step is just to make sure people are behaving sensibly on the SL tasks, and to check if there are differences in overall performance by condition. 
 
-## Part 1
-
 First let's look at the histograms of all responses to determine whether they look like those reported in Seigelman et al., 2017, and to see whether the data look normal. This includes the **Chinese** and **Unfamiliar** stimuli (light blue and dark blue respectively), broken down by participant (Chinese on top, English on bottom).
 
 \vspace{16pt}
@@ -80,7 +78,7 @@ newddA <- dplyr::group_by(dl,SLtype,languageA) %>%
 
 p1 <- ggplot(data = newddA, aes(x = SLtype, y = mean, fill = SLtype)) +
   geom_point(data=dl,aes(x = SLtype, y = SLcorrect, colour=SLtype), 
-             position="jitter", alpha=0.6, show.legend=FALSE) +
+             position="jitter", alpha=0.4, show.legend=FALSE) +
   scale_colour_manual(values=c(chineseColour,unfamiliarColour)) +
   geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5, show.legend=FALSE) +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
@@ -105,7 +103,7 @@ newddB <- dplyr::group_by(dl,SLtype,languageB) %>%
 
 p2 <- ggplot(data = newddB, aes(x = SLtype, y = mean, fill = SLtype)) +
   geom_point(data=dl,aes(x = SLtype, y = SLcorrect, colour=SLtype), 
-             position="jitter", alpha=0.6, show.legend=FALSE) +
+             position="jitter", alpha=0.4, show.legend=FALSE) +
   scale_colour_manual(values=c(chineseColour,unfamiliarColour)) +
   geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5, show.legend=FALSE) +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
@@ -124,7 +122,9 @@ p2 <- ggplot(data = newddB, aes(x = SLtype, y = mean, fill = SLtype)) +
 grid.arrange(p1,p2,ncol=2)
 ```
 \vspace{16pt}
-Indeed it looks like there is, regardless of how we classify people's languages (languageA or languageB). To evaluate this statistically we ran an ANOVA with accuracy as our outcome variable and stimulus type (SLtype) and participant (languageA) as predictor. 
+Indeed it looks like there is, regardless of how we classify people's languages (languageA or languageB). One interesting thing that I wasn't expecting is that it looks like Chinese people actually do *worse* on the Unfamiliar stimuli -- in particular, nobody does well, the distribution cuts off at around 80% accuracy. My post-hoc explanation for this is that it may be a kind of interference, the visual analogue of the phonological interference identified in previous studies: the unfamiliar stimuli are visually similar enough to their overlearned Chinese characters that they're actually having a harder time processing them than English speakers are. But this is post-hoc obviously.
+
+Anyway, to evaluate this statistically we ran an ANOVA with accuracy as our outcome variable and stimulus type (SLtype) and participant language (languageA or languageB) as predictor. 
 
 ```{r echo=FALSE, results="hide"}
 anovaSLA <- summary(aov(SLcorrect ~ SLtype + languageA + SLtype*languageA, data=dl))
@@ -143,7 +143,7 @@ We also did Bayesian ANOVAs with default priors showed the same thing: the Bayes
 We might also care about whether people's behaviour showed the same *pattern* as Siegelman et al., 2017: that is, were the test items that their participants found hard the same test items that our participants found hard? We can evaluate this by calculating the correlation between performance on each item between them (which they reported) and our data. It is evident that all correlations are highly significant, so people were doing sensible things.
 
 \vspace{16pt}
-```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=8, fig.align='center'}
 p1 <- ggscatter(sl, x="baseitems", y="sl1items", add="reg.line", cor.coef=TRUE, size=2,
                 cor.method = "pearson", xlab = "Siegelman items", ylab="Our data",
                 cor.coef.coord=c(0.42,0.65))
@@ -162,7 +162,7 @@ So far it seems that the statistical learning tasks are behaving as expected, an
 
 Here we'll compare perceptual fluency from the first to the second time people did it. We might be curious about whether performance changes between the tasks, either due to fatigue or practice effects. Thus, the figure below shows overall performance on the First and Second task. 
 
-```{r, echo=FALSE, warning=FALSE, fig.height=3, fig.width=5, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=5, fig.align='center'}
 pf$trial <- 2:48
 timecols <- c("mediumpurple","mediumpurple4")
 ordm <- gather(pf,"order","mean","means1","means2") %>% select(trial,order,mean)
@@ -192,7 +192,7 @@ Some things are immediately obvious. First, reassuringly, the time each stimulus
 We can ask an analogous question for PF as we did for SL: did it differ by participant language or stimulus type?
 
 \vspace{16pt}
-```{r, echo=FALSE, fig.height=5, fig.width=9, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, fig.height=5, fig.width=9, fig.align='center'}
 newdpA <- dplyr::group_by(dl,PFtype,languageA) %>% 
   summarise(mean=mean(PFavg,na.rm = TRUE),
             sd = sd(PFavg,na.rm=TRUE),
@@ -201,7 +201,7 @@ newdpA <- dplyr::group_by(dl,PFtype,languageA) %>%
 
 p1 <- ggplot(data = newdpA, aes(x = PFtype, y = mean, fill = PFtype)) +
   geom_point(data=dl,aes(x = PFtype, y = PFavg, colour=PFtype), 
-             position="jitter", alpha=0.6, show.legend=FALSE) +
+             position="jitter", alpha=0.4, show.legend=FALSE) +
   scale_colour_manual(values=c(chineseColour,unfamiliarColour)) +
   geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5, show.legend=FALSE) +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
@@ -226,7 +226,7 @@ newdpB <- dplyr::group_by(dl,PFtype,languageB) %>%
 
 p2 <- ggplot(data = newdpB, aes(x = PFtype, y = mean, fill = PFtype)) +
   geom_point(data=dl,aes(x = PFtype, y = PFavg, colour=PFtype), 
-             position="jitter", alpha=0.6, show.legend=FALSE) +
+             position="jitter", alpha=0.4, show.legend=FALSE) +
   scale_colour_manual(values=c(chineseColour,unfamiliarColour)) +
   geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5, show.legend=FALSE) +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
