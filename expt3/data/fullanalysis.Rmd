@@ -122,9 +122,8 @@ p2 <- ggplot(data = newddB, aes(x = SLtype, y = mean, fill = SLtype)) +
 grid.arrange(p1,p2,ncol=2)
 ```
 \vspace{16pt}
-Indeed it looks like there is, regardless of how we classify people's languages (languageA or languageB). One interesting thing that I wasn't expecting is that it looks like Chinese people actually do *worse* on the Unfamiliar stimuli -- in particular, nobody does well, the distribution cuts off at around 80% accuracy. My post-hoc explanation for this is that it may be a kind of interference, the visual analogue of the phonological interference identified in previous studies: the unfamiliar stimuli are visually similar enough to their overlearned Chinese characters that they're actually having a harder time processing them than English speakers are. But this is post-hoc obviously.
-
-Anyway, to evaluate this statistically we ran an ANOVA with accuracy as our outcome variable and stimulus type (SLtype) and participant language (languageA or languageB) as predictor. 
+Indeed it looks like there is, regardless of how we classify people's languages (languageA or languageB). 
+To evaluate this statistically we ran an ANOVA with accuracy as our outcome variable and stimulus type (SLtype) and participant language (languageA or languageB) as predictor. 
 
 ```{r echo=FALSE, results="hide"}
 anovaSLA <- summary(aov(SLcorrect ~ SLtype + languageA + SLtype*languageA, data=dl))
@@ -134,11 +133,75 @@ dl$languageA <- as.factor(dl$languageA)
 dl$languageB <- as.factor(dl$languageB)
 bfanovaSLA <- anovaBF(SLcorrect ~ SLtype + languageA + SLtype*languageA, data=dl)
 bfanovaSLB <- anovaBF(SLcorrect ~ SLtype + languageB + SLtype*languageB, data=dl)
+tAunf <- t.test(dl$SLcorrect[dl$languageA=="Chinese" & dl$SLtype=="Unfamiliar"],dl$SLcorrect[dl$languageA=="English" & dl$SLtype=="Unfamiliar"])
+tBunf <- t.test(dl$SLcorrect[dl$languageB=="Chinese" & dl$SLtype=="Unfamiliar"],dl$SLcorrect[dl$languageB=="English" & dl$SLtype=="Unfamiliar"])
+
 ```
 
 Regardless of how we classify participants into language, the results are significant. For the languageA classification, there is a main effect of SLtype (F(`r anovaSLA[[1]][["Df"]][1]`,`r anovaSLA[[1]][["Df"]][4]`)=`r round(anovaSLA[[1]][["F value"]][1],4)`, p=`r round(anovaSLA[[1]][["Pr(>F)"]][1],4)`) and an interaction (F(`r anovaSLA[[1]][["Df"]][3]`,`r anovaSLA[[1]][["Df"]][4]`)=`r round(anovaSLA[[1]][["F value"]][3],4)`, p=`r round(anovaSLA[[1]][["Pr(>F)"]][3],4)`) but no effect of language (F(`r anovaSLA[[1]][["Df"]][2]`,`r anovaSLA[[1]][["Df"]][4]`)=`r round(anovaSLA[[1]][["F value"]][2],4)`, p=`r round(anovaSLA[[1]][["Pr(>F)"]][2],4)`). For the language B classification, there is a main effect of SLtype (F(`r anovaSLB[[1]][["Df"]][1]`,`r anovaSLB[[1]][["Df"]][4]`)=`r round(anovaSLB[[1]][["F value"]][1],4)`, p=`r round(anovaSLB[[1]][["Pr(>F)"]][1],4)`) and an interaction (F(`r anovaSLB[[1]][["Df"]][3]`,`r anovaSLB[[1]][["Df"]][4]`)=`r round(anovaSLB[[1]][["F value"]][3],4)`, p=`r round(anovaSLB[[1]][["Pr(>F)"]][3],4)`) but no effect of language (F(`r anovaSLB[[1]][["Df"]][2]`,`r anovaSLB[[1]][["Df"]][4]`)=`r round(anovaSLB[[1]][["F value"]][2],4)`, p=`r round(anovaSLB[[1]][["Pr(>F)"]][2],4)`).
 
 We also did Bayesian ANOVAs with default priors showed the same thing: the BayesFactor was `r round(extractBF(bfanovaSLA)$bf[2],3)` for SLtype and `r round(extractBF(bfanovaSLA)$bf[4],3)` for the interaction, with all other BFs less than zero (languageA: BF=`r round(extractBF(bfanovaSLA)$bf[1],3)`; languageA + SLtype: BF=`r round(extractBF(bfanovaSLA)$bf[3],3)`). The qualitative effects are the same for the languageB classification: BF=`r round(extractBF(bfanovaSLB)$bf[2],3)` for SLtype and `r round(extractBF(bfanovaSLB)$bf[4],3)` for the interaction, with all other BFs less than zero (languageA: BF=`r round(extractBF(bfanovaSLB)$bf[1],3)`; languageA + SLtype: BF=`r round(extractBF(bfanovaSLB)$bf[3],3)`).
+
+One interesting thing that I wasn't expecting is that it looks like Chinese people actually do *worse* on the Unfamiliar stimuli -- in particular, nobody does well, the distribution cuts off at around 80% accuracy. I checked to see if there was a significant difference between Chinese people on the Unfamiliar stimuli and English people on them, and indeed there is: language A: t=`r round(tAunf[[1]]["t"][[1]],3)`, df=`r round(tAunf[[2]]["df"][[1]],3)`, p=`r round(tAunf[[3]],3)`; language B: t=`r round(tBunf[[1]]["t"][[1]],3)`, df=`r round(tBunf[[2]]["df"][[1]],3)`, p=`r round(tBunf[[3]],3)`. My post-hoc explanation for this is that it may be a kind of interference, the visual analogue of the phonological interference identified in previous studies: the unfamiliar stimuli are visually similar enough to their overlearned Chinese characters that they're actually having a harder time processing them than English speakers are. But this is post-hoc obviously.
+
+One way to at least get a sense of what is going on by breaking down the Chinese performance on the Unfamiliar stimuli to those who saw it first or second. One might imagine that if it's interference, perhaps those who saw it second would have done worse because of priming. However, the results (shown below) don't bear that out. I'm not sure that this means much though -- these were very common, very overlearned words, so it's quite plausible that there was a lot of interference even without priming. 
+
+```{r, echo=FALSE, fig.height=3, fig.width=10, fig.align='center'}
+newdu <- filter(dl,SLtype=="Unfamiliar")
+newdu$slOrder <- recode(newdu$slOrder,"1"="Chinese 1st","2"="Unfamiliar 1st")
+dUnfA <- dplyr::group_by(newdu,languageA,slOrder) %>%
+  summarise(mean=mean(SLcorrect,na.rm = TRUE),
+            sd = sd(SLcorrect,na.rm=TRUE),
+            n = n(),
+            se = sd(SLcorrect,na.rm=TRUE)/sqrt(n()))
+
+
+dUnfB <- dplyr::group_by(newdu,languageB,slOrder) %>%
+  summarise(mean=mean(SLcorrect,na.rm = TRUE),
+            sd = sd(SLcorrect,na.rm=TRUE),
+            n = n(),
+            se = sd(SLcorrect,na.rm=TRUE)/sqrt(n()))
+
+
+p1 <- ggplot(data = dUnfA, aes(x = slOrder, y = mean, fill = slOrder)) +
+  geom_point(data=newdu,aes(x = slOrder, y = SLcorrect, colour=slOrder), 
+             position="jitter", alpha=0.4, show.legend=FALSE) +
+  scale_colour_brewer(type="qual",palette="Accent") +
+  geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5, show.legend=FALSE) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
+  facet_wrap(~languageA) +
+  labs(y = "SLscore") + 
+  ggtitle("Unfamiliar stimuli, languageA") +
+  coord_cartesian(ylim=c(0.2,1.0)) +
+  scale_fill_brewer(type="qual",palette="Accent") +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+
+p2 <- ggplot(data = dUnfB, aes(x = slOrder, y = mean, fill = slOrder)) +
+  geom_point(data=newdu,aes(x = slOrder, y = SLcorrect, colour=slOrder), 
+             position="jitter", alpha=0.4, show.legend=FALSE) +
+  scale_colour_brewer(type="qual",palette="Accent") +
+  geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5, show.legend=FALSE) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
+  facet_wrap(~languageB) +
+  labs(y = "SLscore") + 
+  ggtitle("Unfamiliar stimuli, languageB") +
+  coord_cartesian(ylim=c(0.2,1.0)) +
+  scale_fill_brewer(type="qual",palette="Accent") +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+grid.arrange(p1,p2,ncol=2)
+```
 
 We might also care about whether people's behaviour showed the same *pattern* as Siegelman et al., 2017: that is, were the test items that their participants found hard the same test items that our participants found hard? We can evaluate this by calculating the correlation between performance on each item between them (which they reported) and our data. It is evident that all correlations are highly significant, so people were doing sensible things.
 
