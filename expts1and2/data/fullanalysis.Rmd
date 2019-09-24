@@ -232,7 +232,7 @@ pa1 <- ggplot(data = pf, aes(x = PFtype, y = mean, fill = PFtype)) +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
   labs(y = "PFscore") + 
   ggtitle("PF by condition") +
-  coord_cartesian(ylim=c(0,250)) +
+  coord_cartesian(ylim=c(50,200)) +
   scale_fill_manual(values=c(easyColour,hardColour)) +
   theme(axis.text.y=element_text(size = rel(0.9)),
         axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
@@ -257,7 +257,7 @@ pa2 <- ggplot(data = ord, aes(x = session, y = mean, fill = session)) +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
   labs(y = "PFscore") + 
   ggtitle("PF by order") +
-  coord_cartesian(ylim=c(0,250)) +
+  coord_cartesian(ylim=c(50,200)) +
   scale_fill_manual(values=c(firstColour,secondColour)) +
   theme(axis.text.y=element_text(size = rel(0.9)),
         axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
@@ -267,7 +267,7 @@ pa2 <- ggplot(data = ord, aes(x = session, y = mean, fill = session)) +
         legend.position="none", #axis.text.x=element_blank(),
         panel.background = element_rect(fill = "white", colour = "black"))
 
-grid.arrange(pa1,pa2,ncol=2)
+grid.arrange(pa2,pa1,ncol=2)
 ```
 \vspace{16pt}
 ```{r echo=FALSE, results="hide"}

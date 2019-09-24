@@ -41,3 +41,7 @@ Throughout this refers to “Chinese” stimuli vs “medium” stimuli. Medium 
 **Pf2target2…48**: this is what item was the target on that PF question on the first PF task. Probably unimportant for any analyses, I saved because I'm obsessive and it was useful in debugging.
 
 **All of these columns which have three letter codes underneath them like L-N-E etc**: these are just notes of which stimuli were assigned to each triplet for each participant. e.g. L-N-E under SLeasyChinese4 means that for that participant, their fourth "easy" triplet with the Chinese stimuli was composed of images L, N, and E in that order. You should never need to use this, I just saved it all because I'm obsessive and it was useful to track while debugging.
+
+## Addendum
+
+Because we pre-registered only 160 participants but ended up reporting more, we performed all analyses with a dataset composed of just the first 160 people. That is why there is a double for everything: the ones with "first160" at the end include only those 160.
