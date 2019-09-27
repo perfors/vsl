@@ -84,7 +84,7 @@ p1 <- ggplot(data = newddA, aes(x = SLtype, y = mean, fill = SLtype)) +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
   facet_wrap(~languageA) +
   labs(y = "SLscore") + 
-  ggtitle("Statistical learning, languageA") +
+  ggtitle("Statistical learning by participant group") +
   coord_cartesian(ylim=c(0.2,1.0)) +
   scale_fill_manual(values=c(chineseColour,unfamiliarColour)) +
   theme(axis.text.y=element_text(size = rel(0.9)),
@@ -255,7 +255,7 @@ Some things are immediately obvious. First, reassuringly, the time each stimulus
 We can ask an analogous question for PF as we did for SL: did it differ by participant language or stimulus type?
 
 \vspace{16pt}
-```{r, echo=FALSE, message=FALSE, fig.height=5, fig.width=9, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=9, fig.align='center'}
 newdpA <- dplyr::group_by(dl,PFtype,languageA) %>% 
   summarise(mean=mean(PFavg,na.rm = TRUE),
             sd = sd(PFavg,na.rm=TRUE),
@@ -269,8 +269,8 @@ p1 <- ggplot(data = newdpA, aes(x = PFtype, y = mean, fill = PFtype)) +
   geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5, show.legend=FALSE) +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
   facet_wrap(~languageA) +
-  labs(y = "PFaverage") + 
-  ggtitle("Perceptual fluency, languageA") +
+  labs(y = "PFscore") + 
+  ggtitle("Perceptual fluency by participant group") +
   coord_cartesian(ylim=c(0,200)) +
   scale_fill_manual(values=c(chineseColour,unfamiliarColour)) +
   theme(axis.text.y=element_text(size = rel(0.9)),
@@ -294,7 +294,7 @@ p2 <- ggplot(data = newdpB, aes(x = PFtype, y = mean, fill = PFtype)) +
   geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5, show.legend=FALSE) +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
   facet_wrap(~languageB) +
-  labs(y = "PFaverage") + 
+  labs(y = "PFscore") + 
   ggtitle("Perceptual fluency, languageB") +
   coord_cartesian(ylim=c(0,200)) +
   scale_fill_manual(values=c(chineseColour,unfamiliarColour)) +
@@ -406,26 +406,26 @@ fisherP = (2*(1-pnorm(abs(fisherZ))))
 
 Our prediction was borne out. This time when we test this with the Fisher r-to-z transformation, it is significantly different: z=`r fisherZ`, p=`r fisherP`. 
 
-We can also break each of the **same** and **different** categories to see if there are any differences across stimulus types, shown below. It is evident that the same general trend is true regardless of stimulus type: both Chinese to Chinese and Unfamiliar to Unfamiliar have higher correlations than either of the different directions. 
+We can also break the **same** categories into Familiar and Unfamiliar, split between Chinese speakers and English speakers. We'd expect the correlation for English speakers to be the same for Familiar and Unfamiliar, but Chinese speakers to be more correlated for Unfamiliar stimuli (if they act like the participants in Experiment 1). 
 
 ```{r, echo=FALSE, warning=FALSE, fig.height=5, fig.width=9, fig.align='center'}
-p1 <- ggscatter(ds, x="SLcorrectChinese", y="PFavgChinese", add="reg.line", cor.coef=TRUE, 
+p1 <- ggscatter(chA, x="SLcorrectChinese", y="PFavgChinese", add="reg.line", cor.coef=TRUE, 
                 cor.method = "pearson", xlab = "SL Chinese", ylab="PF Chinese", size=2, 
-                cor.coef.coord=c(0.8,0.46)) +
-  ggtitle("Same: Chinese") + theme(plot.title = element_text(hjust=0.5))
-p2 <- ggscatter(ds, x="SLcorrectUnfamiliar", y="PFavgUnfamiliar", add="reg.line", cor.coef=TRUE, 
+                cor.coef.coord=c(0.6,0.46)) +
+  ggtitle("Chinese people, Chinese stimuli") + theme(plot.title = element_text(hjust=0.5))
+p2 <- ggscatter(chA, x="SLcorrectUnfamiliar", y="PFavgUnfamiliar", add="reg.line", cor.coef=TRUE, 
                 cor.method = "pearson", xlab = "SL Unfamiliar", ylab="PF Unfamiliar", size=2, 
-                cor.coef.coord=c(0.8,0.6)) +
-  ggtitle("Same: Unfamiliar") + theme(plot.title = element_text(hjust=0.5))
+                cor.coef.coord=c(0.6,0.46)) +
+  ggtitle("Chinese people, Unfamiliar stimuli") + theme(plot.title = element_text(hjust=0.5))
 
-p3 <- ggscatter(ds, x="SLcorrectUnfamiliar", y="PFavgChinese", add="reg.line", cor.coef=TRUE, 
-                cor.method = "pearson", xlab = "SL Unfamiliar", ylab="PF Chinese", size=2, 
-                cor.coef.coord=c(0.8,0.46)) +
-  ggtitle("Different 1") + theme(plot.title = element_text(hjust=0.5))
-p4 <- ggscatter(chA, x="SLcorrectChinese", y="PFavgUnfamiliar", add="reg.line", cor.coef=TRUE, 
-                cor.method = "pearson", xlab = "SL Chinese", ylab="PF Unfamiliar", size=2, 
-                cor.coef.coord=c(0.8,0.6)) +
-  ggtitle("Different 2") + theme(plot.title = element_text(hjust=0.5))
+p3 <- ggscatter(engA, x="SLcorrectChinese", y="PFavgChinese", add="reg.line", cor.coef=TRUE, 
+                cor.method = "pearson", xlab = "SL Chinese", ylab="PF Chinese", size=2, 
+                cor.coef.coord=c(0.6,0.46)) +
+  ggtitle("English people, Chinese stimuli") + theme(plot.title = element_text(hjust=0.5))
+p4 <- ggscatter(engA, x="SLcorrectUnfamiliar", y="PFavgUnfamiliar", add="reg.line", cor.coef=TRUE, 
+                cor.method = "pearson", xlab = "SL Unfamiliar", ylab="PF Unfamiliar", size=2, 
+                cor.coef.coord=c(0.6,0.46)) +
+  ggtitle("English people, Unfamiliar Stimuli") + theme(plot.title = element_text(hjust=0.5))
 
 grid.arrange(p1,p2,p3,p4,ncol=2)
 

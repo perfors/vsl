@@ -14,7 +14,6 @@ library(lsr)
 library("ggpubr")
 library("gridExtra")
 library("reshape2")
-library(plyr)
 library(lme4)
 library(tidyverse)
 dodge <- position_dodge(width = 0.9)
@@ -321,43 +320,123 @@ fisherP = (2*(1-pnorm(abs(fisherZ))))
 
 It is indeed apparent that **Same** appears to correlate with each other much better than **Different**. We can statistically test this with the Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`. So these are indeed significantly different.
 
+Within the **Same** stimuli, we can also look at whether there is a difference when both are **Familiar** or both are **Unfamiliar**. That is shown below. 
+
+```{r, echo=FALSE, fig.height=3.3, fig.width=8, fig.align='center'}
+First <- d$SL1correct[d$condition=="same" & d$SL1condition=="Familiar"]
+Second <- d$SL2correct[d$condition=="same" & d$SL2condition=="Familiar"]
+same <- data.frame(First,Second)
+corSame = cor.test(First, Second, method="pearson")
+rSame = corSame$estimate
+nSame = sum(complete.cases(First,Second))
+p1 <- ggscatter(same, x="First", y="Second", add="reg.line", cor.coef=TRUE, 
+                cor.method = "pearson", xlab = "Session 1", ylab="Session 2", size=2, 
+                cor.coef.coord=c(0.8,0.46))
+p1 <- p1 + ggtitle("Familiar stimuli") + theme(plot.title = element_text(hjust=0.5))
+First <- d$SL1correct[d$condition=="same" & d$SL1condition=="Unfamiliar"]
+Second <- d$SL2correct[d$condition=="same" & d$SL2condition=="Unfamiliar"]
+different <- data.frame(First,Second)
+corDifferent = cor.test(First, Second, method="pearson")
+rDifferent = corDifferent$estimate
+nDifferent = sum(complete.cases(First,Second))
+p2 <- ggscatter(different, x="First", y="Second", add="reg.line",
+                cor.coef=TRUE, cor.method = "pearson", xlab = "Session 1", ylab="Session 2",
+                size=2, cor.coef.coord=c(0.35,0.9))
+p2 <- p2 + ggtitle("Unfamiliar stimuli") + theme(plot.title = element_text(hjust=0.5))
+grid.arrange(p1,p2,ncol=2)
+
+# are these significant using fisher transformation
+fisherZ = ((0.5*log((1+rSame)/(1-rSame)))-(0.5*log((1+rDifferent)/(1-rDifferent))))/((1/(nSame-3))+(1/(nDifferent-3)))^0.5
+fisherP = (2*(1-pnorm(abs(fisherZ))))
+```
+
+It looks like the correlation is slightly larger with **Unfamiliar** stimuli. The Fisher r-to-z transformation shows: z=`r fisherZ`, p=`r fisherP` which means that this difference is not itself significant.
+
 # Relation of statistical learning to perceptual fluency
 
-Given the hypotheses of our study, we're also interested in determining whether performance on the perceptual fluency task predicts performance on the statistical learning task. I set it up so that for everyone, the first perceptual fluency task used the same stimuli as the statistical learning test on Session 1. Conversely, the second perceptual fluency task used the same stimuli as the stastistical learning test on Session 2. The obvious thing to do first is just to pool everything together, and see to what extent each perceptual fluency task predicts statistical learning. That is shown below.
-\vspace{16pt}
-```{r, echo=FALSE, fig.height=2.5, fig.width=4, fig.align='center', warning=FALSE}
-allpf <- dl$PFpauseavg
-allsl <- dl$SLcorrect
-corrs <- data.frame(allpf,allsl)
-p1 <- ggscatter(corrs, x="allpf", y="allsl", add="reg.line", cor.coef=TRUE, 
+Given the hypotheses of our study, we're also interested in determining whether performance on the perceptual fluency task predicts performance on the statistical learning task. If familiarity mediates this, we would expect that PFscore and SL score would be more highly correlated when the stimuli were the same and when they were different.
+
+The stimuli were only different for people in the DIFFERENT condition. Since I made it so the first PF task always used the stimuli from the first SL task, that means that comparing different stimuli involved comparing the first PF task to the second SL task and the second PF task to the first SL task. 
+
+To make the correlation calculation for the same-stimuli equivalent, then, I focused on people in the SAME condition and the same trials (the first PF task to the second SL task and the second PF task to the first SL task). These results are shown below.
+
+```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', warning=FALSE}
+# first, get the different ones
+nd <- filter(d,condition=="different") %>%
+  gather('PF1pauseavg','PF2pauseavg', key = "PFtype", value = "PFscore") %>%
+  gather('SL1correct','SL2correct', key = "SLtype", value = "SLscore") 
+nd$PFtype <- recode(nd$PFtype,"PF1pauseavg"="1","PF2pauseavg"="2")
+nd$SLtype <- recode(nd$SLtype,"SL1correct"="1","SL2correct"="2")
+diff <- filter(nd,PFtype!=SLtype) 
+diff$PFscore[which(diff$PFscore==387.5)] <- NA # removing 4SD outlier
+
+# now find the equivalent ones from the "same"" condition
+ns <- filter(d,condition=="same") %>%
+  gather('PF1pauseavg','PF2pauseavg', key = "PFtype", value = "PFscore") %>%
+  gather('SL1correct','SL2correct', key = "SLtype", value = "SLscore") 
+ns$PFtype <- recode(ns$PFtype,"PF1pauseavg"="1","PF2pauseavg"="2")
+ns$SLtype <- recode(ns$SLtype,"SL1correct"="1","SL2correct"="2")
+same <- filter(ns,PFtype!=SLtype) 
+
+p1 <- ggscatter(diff, x="PFscore", y="SLscore", add="reg.line", cor.coef=TRUE, 
                 size=2, cor.method = "pearson", xlab = "PFscore", 
                 ylab="SLscore",cor.coef.coord=c(230,0.8))
-p1 <- p1 + ggtitle("PF to SL") + theme(plot.title = element_text(hjust=0.5))
-p1
-```
-\vspace{16pt}
-So having a shorter lag time on the perceptual fluency task is correlated with being more accurate on the statistical learning task. We can also break it down by whether the stimuli were **Familiar** or **Unfamiliar**. .
-\vspace{16pt}
-```{r, echo=FALSE, fig.height=2.5, fig.width=7, fig.align='center', warning=FALSE}
-fampf <- dl$PFpauseavg[dl$PFtype=="Familiar"]
-famsl <- dl$SLcorrect[dl$PFtype=="Familiar"]
-famcorrs <- data.frame(fampf,famsl)
-p2 <- ggscatter(famcorrs, x="fampf", y="famsl", add="reg.line", cor.coef=TRUE, 
-                size=2, cor.method = "pearson", xlab = "Perceptual fluency", 
-                ylab="Statistical learning",cor.coef.coord=c(230,0.8))
-p2 <- p2 + ggtitle("PF to SL: Familiar") + theme(plot.title = element_text(hjust=0.5))
+p1 <- p1 + ggtitle("PF to SL: Different") + theme(plot.title = element_text(hjust=0.5))
 
-novpf <- dl$PFpauseavg[dl$PFtype=="Unfamiliar"]
-novsl <- dl$SLcorrect[dl$PFtype=="Unfamiliar"]
-novcorrs <- data.frame(novpf,novsl)
-p3 <- ggscatter(novcorrs, x="novpf", y="novsl", add="reg.line", cor.coef=TRUE, 
-                size=2, cor.method = "pearson", xlab = "Perceptual fluency", 
-                ylab="Statistical learning",cor.coef.coord=c(230,0.8))
-p3 <- p3 + ggtitle("PF to SL: Unfamiliar") + theme(plot.title = element_text(hjust=0.5))
-grid.arrange(p2,p3,ncol=2)
+p2 <- ggscatter(same, x="PFscore", y="SLscore", add="reg.line", cor.coef=TRUE, 
+                size=2, cor.method = "pearson", xlab = "PFscore", 
+                ylab="SLscore",cor.coef.coord=c(230,0.8))
+p2 <- p2 + ggtitle("PF to SL: Same") + theme(plot.title = element_text(hjust=0.5))
+
+grid.arrange(p1,p2,ncol=2)
+
+# are these significant using fisher transformation
+corSame = cor.test(same$PFscore, same$SLscore, method="pearson")
+rSame = corSame$estimate
+nSame = sum(complete.cases(same$PFscore,same$SLscore))
+corDiff = cor.test(diff$PFscore, diff$SLscore, method="pearson")
+rDifferent = corDiff$estimate
+nDifferent = sum(complete.cases(diff$PFscore,diff$SLscore))
+fisherZ = ((0.5*log((1+rSame)/(1-rSame)))-(0.5*log((1+rDifferent)/(1-rDifferent))))/((1/(nSame-3))+(1/(nDifferent-3)))^0.5
+fisherP = (2*(1-pnorm(abs(fisherZ))))
 ```
-\vspace{16pt}
-This is kind of interesting. It's cool that the PF test does a reasonable job predicting statistical learning performance. It's also interesting that the relationship is stronger for the **Unfamiliar** stimuli (possibly because the **Familiar** ones are so overlearned there's less room for individual differences?). It should be noted that the strength of the relationship between perceptual fluency and statistical learning is less strong than between statistical learning on two consecutive days, even when the stimuli are different. So that's an indication that there is some important component of statistical learning the perceptual fluency doesn't touch. Still, it's kind of impressive how much does just come down to perceptual fluency.
+
+So having a shorter lag time on the perceptual fluency task is correlated with being more accurate on the statistical learning task. In addition, this relationship is stronger when the stimuli are the same than when they were different. This difference is itself non-signficant: Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`.
+
+For the same stimuli, we can break it down by whether they were **Familiar** or **Unfamiliar**. .
+
+```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', warning=FALSE}
+# now find the equivalent ones from the "same"" condition
+nsf <- filter(same,SL1condition=="Familiar")
+nsu <- filter(same,SL1condition=="Unfamiliar")
+
+p1 <- ggscatter(nsf, x="PFscore", y="SLscore", add="reg.line", cor.coef=TRUE, 
+                size=2, cor.method = "pearson", xlab = "PFscore", 
+                ylab="SLscore",cor.coef.coord=c(170,0.8))
+p1 <- p1 + ggtitle("PF to SL: Familiar") + theme(plot.title = element_text(hjust=0.5))
+
+p2 <- ggscatter(nsu, x="PFscore", y="SLscore", add="reg.line", cor.coef=TRUE, 
+                size=2, cor.method = "pearson", xlab = "PFscore", 
+                ylab="SLscore",cor.coef.coord=c(230,0.8))
+p2 <- p2 + ggtitle("PF to SL: Unfamiliar") + theme(plot.title = element_text(hjust=0.5))
+
+grid.arrange(p1,p2,ncol=2)
+
+# are these significant using fisher transformation
+corFam = cor.test(nsf$PFscore, nsf$SLscore, method="pearson")
+rSame = corFam$estimate
+nSame = sum(complete.cases(nsf$PFscore,nsf$SLscore))
+corUnf = cor.test(nsu$PFscore, nsu$SLscore, method="pearson")
+rDifferent = corUnf$estimate
+nDifferent = sum(complete.cases(nsu$PFscore,nsu$SLscore))
+fisherZ = ((0.5*log((1+rSame)/(1-rSame)))-(0.5*log((1+rDifferent)/(1-rDifferent))))/((1/(nSame-3))+(1/(nDifferent-3)))^0.5
+fisherP = (2*(1-pnorm(abs(fisherZ))))
+```
+
+
+This is kind of interesting. It's cool that the PF test does a reasonable job predicting statistical learning performance. It's also interesting that the relationship exists mainly for the **Unfamiliar** stimuli (possibly because the **Familiar** ones are so overlearned there's less room for individual differences?). This difference is itself non-significant however: Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`.
+
+It should be noted that the strength of the relationship between perceptual fluency and statistical learning is less strong than between statistical learning on two consecutive days, even when the stimuli are different. So that's an indication that there is some important component of statistical learning the perceptual fluency doesn't touch. Still, it's kind of impressive how much does just come down to perceptual fluency.
 
 ## Overall
 
@@ -388,7 +467,7 @@ ggplot(data = newd1, aes(x = SL1condition, y = mean, fill = SL1condition)) +
   scale_colour_manual(values=c(easyColour,hardColour,novelAColour)) +
   geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5) +
   geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
-  labs(y = "Proportion correct") + 
+  labs(y = "SLscore") + 
   ggtitle("SL Performance by Condition") +
   coord_cartesian(ylim=c(0.3,1)) +
   scale_fill_manual(values=c(easyColour,hardColour,novelAColour)) +
