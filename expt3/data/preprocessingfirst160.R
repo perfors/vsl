@@ -45,6 +45,10 @@ nPFoutChinese <- sum(is.na(fullD$PFavgChinese))
 fullD$PFavgUnfamiliar[fullD$PFavgUnfamiliar>mean(c(fullD$PFavgChinese,fullD$PFavgUnfamiliar),na.rm=TRUE) +
                     4*sd(c(fullD$PFavgChinese,fullD$PFavgUnfamiliar),na.rm=TRUE)] <- NA
 nPFoutUnfamiliar <- sum(is.na(fullD$PFavgUnfamiliar))
+fullD$PF1avg[fullD$PF1avg>mean(c(fullD$PFavgChinese,fullD$PFavgUnfamiliar),na.rm=TRUE) +
+               4*sd(c(fullD$PFavgChinese,fullD$PFavgUnfamiliar),na.rm=TRUE)] <- NA
+fullD$PF2avg[fullD$PF2avg>mean(c(fullD$PFavgChinese,fullD$PFavgUnfamiliar),na.rm=TRUE) +
+               4*sd(c(fullD$PFavgChinese,fullD$PFavgUnfamiliar),na.rm=TRUE)] <- NA
 
 # now classify people into the right condition based on their check questions
 dq <- select(fullD,contains("question"))

@@ -281,6 +281,73 @@ pfcd <- cohensD(dl$PFpauseavg[dl$PFtype=="Familiar"],dl$PFpauseavg[dl$PFtype=="U
 Is this significant? In order to evaluate this, I ran two separate t-tests, one looking at lagtime by test order (i.e., corresponding to the figure on the left) and one at lagtime by condition (i.e., corresponding to the figure on the right). Order was not significant (t(`r round(pfo$parameter,1)`)=`r round(pfo$statistic,2)`, p=`r round(pfo$p.value,4)`, d=`r round(pfod,3)`) but condition was (t(`r round(pfc$parameter,1)`)=`r round(pfc$statistic,2)`, p=0.0006, d=`r round(pfcd,3)`).
 This is pretty cool: it means that, as predicted, people did better on the perceptual fluency task when the stimulus items involved were **Familiar** ones. That said, performance on the two back-to-back perceptual fluency tasks was of course also highly correlated with one another (r = `r round(pfpf$estimate,4)`, p<0.0001).
 
+Of course, these overall correlations with each other could just be because they were back-to-back. One wonders to what extent the PF task is reflecting stimulus-dependent learning vs general efficient processing speed. To kind of get a sense of this, we can compare correlations in the PF task for the people who saw the same stimulus type both times vs a different stimulus type both times, as below:
+
+```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', warning=FALSE}
+# first, get the different ones
+ndp <- filter(d,condition=="different") 
+ndp$PF1pauseavg[which(ndp$PF1pauseavg==387.5)] <- NA # removing 4SD outlier
+
+# now find the equivalent ones from the "same"" condition
+nsp <- filter(d,condition=="same")
+
+p1 <- ggscatter(ndp, x="PF1pauseavg", y="PF2pauseavg", add="reg.line", cor.coef=TRUE, 
+                size=2, cor.method = "pearson", xlab = "PFscore time 1", 
+                ylab="PFscore time 2",cor.coef.coord=c(170,0.8))
+p1 <- p1 + ggtitle("PF to PF: Different") + theme(plot.title = element_text(hjust=0.5))
+
+p2 <- ggscatter(nsp, x="PF1pauseavg", y="PF2pauseavg", add="reg.line", cor.coef=TRUE, 
+                size=2, cor.method = "pearson", xlab = "PFscore time 1", 
+                ylab="PFscore time 2",cor.coef.coord=c(170,0.8))
+p2 <- p2 + ggtitle("PF to PF: Same") + theme(plot.title = element_text(hjust=0.5))
+
+grid.arrange(p1,p2,ncol=2)
+
+# are these significant using fisher transformation
+corSame = cor.test(nsp$PF1pauseavg, nsp$PF2pauseavg, method="pearson")
+rSame = corSame$estimate
+nSame = sum(complete.cases(nsp$PF1pauseavg, nsp$PF2pauseavg))
+corDiff = cor.test(ndp$PF1pauseavg, ndp$PF2pauseavg, method="pearson")
+rDifferent = corDiff$estimate
+nDifferent = sum(complete.cases(ndp$PF1pauseavg, ndp$PF2pauseavg))
+fisherZ = ((0.5*log((1+rSame)/(1-rSame)))-(0.5*log((1+rDifferent)/(1-rDifferent))))/((1/(nSame-3))+(1/(nDifferent-3)))^0.5
+fisherP = (2*(1-pnorm(abs(fisherZ))))
+```
+
+We can statistically test this with the Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`.
+
+Let's also break the same one down to whether the stimuli were familiar or unfamiliar.
+
+```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', warning=FALSE}
+# now find the equivalent ones from the "same"" condition
+nsf <- filter(nsp,SL1condition=="Familiar")
+nsu <- filter(nsp,SL1condition=="Unfamiliar")
+
+p1 <- ggscatter(nsf, x="PF1pauseavg", y="PF2pauseavg", add="reg.line", cor.coef=TRUE, 
+                size=2, cor.method = "pearson", xlab = "PFscore time 1", 
+                ylab="PFscore time 2",cor.coef.coord=c(120,0.8))
+p1 <- p1 + ggtitle("PF to PF: Familiar") + theme(plot.title = element_text(hjust=0.5))
+
+p2 <- ggscatter(nsu, x="PF1pauseavg", y="PF2pauseavg", add="reg.line", cor.coef=TRUE, 
+                size=2, cor.method = "pearson", xlab = "PFscore time 1", 
+                ylab="PFscore time 2",cor.coef.coord=c(170,0.8))
+p2 <- p2 + ggtitle("PF to PF: Unfamiliar") + theme(plot.title = element_text(hjust=0.5))
+
+grid.arrange(p1,p2,ncol=2)
+
+# are these significant using fisher transformation
+corFam = cor.test(nsf$PF1pauseavg, nsf$PF2pauseavg, method="pearson")
+rSame = corFam$estimate
+nSame = sum(complete.cases(nsf$PF1pauseavg,nsf$PF2pauseavg))
+corUnf = cor.test(nsu$PF1pauseavg, nsu$PF2pauseavg, method="pearson")
+rDifferent = corUnf$estimate
+nDifferent = sum(complete.cases(nsu$PF1pauseavg,nsu$PF2pauseavg))
+fisherZ = ((0.5*log((1+rSame)/(1-rSame)))-(0.5*log((1+rDifferent)/(1-rDifferent))))/((1/(nSame-3))+(1/(nDifferent-3)))^0.5
+fisherP = (2*(1-pnorm(abs(fisherZ))))
+```
+
+We can statistically test this with the Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`.
+
 Finally, next, we really get to look at the meat of our experiment: how these measures relate to each other. 
 
 # Relation of statistical learning to statistical learning

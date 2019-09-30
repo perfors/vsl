@@ -322,6 +322,43 @@ Regardless of how we classify participants into language, the results are signif
 
 We also did Bayesian ANOVAs with default priors showed the same thing: for the languageA classification the BayesFactor was `r round(extractBF(bfanovaPFA)$bf[2],3)` for PFtype, `r round(extractBF(bfanovaPFA)$bf[4],3)` for the interaction, `r round(extractBF(bfanovaPFA)$bf[1],3)` for language, and `r round(extractBF(bfanovaPFA)$bf[3],3)` for language+PFtype. The qualitative effects are the same for the languageB classification: `r round(extractBF(bfanovaPFB)$bf[2],3)` for PFtype, `r round(extractBF(bfanovaPFB)$bf[4],3)` for the interaction, `r round(extractBF(bfanovaPFB)$bf[1],3)` for language, and `r round(extractBF(bfanovaPFB)$bf[3],3)` for language+PFtype.
 
+Let's also look at how perceptual fluency predicts perceptual fluency overall.
+
+```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=9, fig.align='center'}
+ggscatter(dl, x="PF1avg", y="PF2avg", add="reg.line", cor.coef=TRUE, 
+                cor.method = "pearson", xlab = "PFscore time 1", ylab="PFscore time 2", size=2, 
+                cor.coef.coord=c(100,20)) +
+  ggtitle("PF to PF Overall") + theme(plot.title = element_text(hjust=0.5))
+
+```
+
+Now let's look within participant and stimulus
+
+```{r, echo=FALSE, fig.height=2.5, fig.width=9, fig.align='center'}
+chA <- filter(ds,languageA=="Chinese")
+engA <- filter(ds,languageA=="English")
+p1 <- ggscatter(engA, x="PFavgChinese", y="PFavgUnfamiliar", add="reg.line", cor.coef=TRUE, 
+                cor.method = "pearson", xlab = "PFscore Chinese", ylab="PFscore Unfamiliar", size=2, 
+                cor.coef.coord=c(100,50)) +
+  ggtitle("English people") + theme(plot.title = element_text(hjust=0.5))
+p2 <- ggscatter(chA, x="PFavgChinese", y="PFavgUnfamiliar", add="reg.line", cor.coef=TRUE, 
+                cor.method = "pearson", xlab = "PFscore Chinese", ylab="PFscore Unfamiliar", size=2, 
+                cor.coef.coord=c(100,50)) +
+  ggtitle("Chinese people") + theme(plot.title = element_text(hjust=0.5))
+
+grid.arrange(p1,p2,ncol=2)
+
+# are these significant using fisher transformation
+rSame <- cor.test(chA$PFavgChinese,chA$PFavgUnfamiliar)$estimate[[1]]
+rDifferent <- cor.test(engA$PFavgChinese,engA$PFavgUnfamiliar)$estimate[[1]]
+nSame <- nrow(chA)
+nDifferent <- nrow(engA)
+fisherZ = ((0.5*log((1+rSame)/(1-rSame)))-(0.5*log((1+rDifferent)/(1-rDifferent))))/((1/(nSame-3))+(1/(nDifferent-3)))^0.5
+fisherP = (2*(1-pnorm(abs(fisherZ))))
+```
+
+Using the Fisher transformation: z=`r fisherZ`, p=`r fisherP`. 
+ 
 We can also ask how these measures relate to each other.
 
 # Relation of statistical learning to statistical learning
@@ -330,8 +367,6 @@ We might expect that the correlation of people's performance on the two statisti
 
 \vspace{16pt}
 ```{r, echo=FALSE, fig.height=5, fig.width=9, fig.align='center'}
-chA <- filter(ds,languageA=="Chinese")
-engA <- filter(ds,languageA=="English")
 p1 <- ggscatter(engA, x="SLcorrectChinese", y="SLcorrectUnfamiliar", add="reg.line", cor.coef=TRUE, 
                 cor.method = "pearson", xlab = "Chinese", ylab="Unfamiliar", size=2, 
                 cor.coef.coord=c(0.8,0.46)) +
