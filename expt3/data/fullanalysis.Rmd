@@ -37,11 +37,11 @@ First let's look at the histograms of all responses to determine whether they lo
 \vspace{16pt}
 ```{r, echo=FALSE, fig.height=5, fig.width=9.5, fig.align='center'}
 p1 <- ggplot(data = dl, aes(SLcorrect*42, fill=languageA)) +
-  geom_histogram(binwidth=2) +
+  geom_histogram(binwidth=2,colour="black") +
   scale_fill_manual(values=c(chineseColour,unfamiliarColour)) +
   facet_wrap(languageA ~ SLtype) +
   labs(y = "Frequency", x="SLscore") + 
-  ggtitle("Histograms of SL scores, languageA") +
+  ggtitle("Histograms of SL scores") +
   theme(axis.text.y=element_text(size = rel(0.9)),
         axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
         axis.title.x=element_blank(),
@@ -68,7 +68,7 @@ grid.arrange(p1,p2,ncol=2)
 \vspace{16pt}
 These look pretty reasonable. Is the accuracy different between conditions?
 \vspace{16pt}
-```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center'}
+```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center', warning=FALSE, message=FALSE}
 #detach("package:plyr", unload=TRUE)
 newddA <- dplyr::group_by(dl,SLtype,languageA) %>% 
   summarise(mean=mean(SLcorrect,na.rm = TRUE),
@@ -125,7 +125,7 @@ grid.arrange(p1,p2,ncol=2)
 Indeed it looks like there is, regardless of how we classify people's languages (languageA or languageB). 
 To evaluate this statistically we ran an ANOVA with accuracy as our outcome variable and stimulus type (SLtype) and participant language (languageA or languageB) as predictor. 
 
-```{r echo=FALSE, results="hide"}
+```{r echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 anovaSLA <- summary(aov(SLcorrect ~ SLtype + languageA + SLtype*languageA, data=dl))
 anovaSLB <- summary(aov(SLcorrect ~ SLtype + languageB + SLtype*languageB, data=dl))
 dl$SLtype <- as.factor(dl$SLtype)
@@ -133,6 +133,10 @@ dl$languageA <- as.factor(dl$languageA)
 dl$languageB <- as.factor(dl$languageB)
 bfanovaSLA <- anovaBF(SLcorrect ~ SLtype + languageA + SLtype*languageA, data=dl)
 bfanovaSLB <- anovaBF(SLcorrect ~ SLtype + languageB + SLtype*languageB, data=dl)
+tAch <- t.test(dl$SLcorrect[dl$languageA=="Chinese" & dl$SLtype=="Unfamiliar"],dl$SLcorrect[dl$languageA=="Chinese" & dl$SLtype=="Chinese"])
+tBch <- t.test(dl$SLcorrect[dl$languageB=="Chinese" & dl$SLtype=="Unfamiliar"],dl$SLcorrect[dl$languageB=="Chinese" & dl$SLtype=="Chinese"])
+tAe <- t.test(dl$SLcorrect[dl$languageA=="English" & dl$SLtype=="Unfamiliar"],dl$SLcorrect[dl$languageA=="English" & dl$SLtype=="Chinese"])
+tBe <- t.test(dl$SLcorrect[dl$languageB=="English" & dl$SLtype=="Unfamiliar"],dl$SLcorrect[dl$languageB=="English" & dl$SLtype=="Chinese"])
 tAunf <- t.test(dl$SLcorrect[dl$languageA=="Chinese" & dl$SLtype=="Unfamiliar"],dl$SLcorrect[dl$languageA=="English" & dl$SLtype=="Unfamiliar"])
 tBunf <- t.test(dl$SLcorrect[dl$languageB=="Chinese" & dl$SLtype=="Unfamiliar"],dl$SLcorrect[dl$languageB=="English" & dl$SLtype=="Unfamiliar"])
 
@@ -142,11 +146,12 @@ Regardless of how we classify participants into language, the results are signif
 
 We also did Bayesian ANOVAs with default priors showed the same thing: the BayesFactor was `r round(extractBF(bfanovaSLA)$bf[2],3)` for SLtype and `r round(extractBF(bfanovaSLA)$bf[4],3)` for the interaction, with all other BFs less than zero (languageA: BF=`r round(extractBF(bfanovaSLA)$bf[1],3)`; languageA + SLtype: BF=`r round(extractBF(bfanovaSLA)$bf[3],3)`). The qualitative effects are the same for the languageB classification: BF=`r round(extractBF(bfanovaSLB)$bf[2],3)` for SLtype and `r round(extractBF(bfanovaSLB)$bf[4],3)` for the interaction, with all other BFs less than zero (languageA: BF=`r round(extractBF(bfanovaSLB)$bf[1],3)`; languageA + SLtype: BF=`r round(extractBF(bfanovaSLB)$bf[3],3)`).
 
-One interesting thing that I wasn't expecting is that it looks like Chinese people actually do *worse* on the Unfamiliar stimuli -- in particular, nobody does well, the distribution cuts off at around 80% accuracy. I checked to see if there was a significant difference between Chinese people on the Unfamiliar stimuli and English people on them, and indeed there is: language A: t=`r round(tAunf[[1]]["t"][[1]],3)`, df=`r round(tAunf[[2]]["df"][[1]],3)`, p=`r round(tAunf[[3]],3)`; language B: t=`r round(tBunf[[1]]["t"][[1]],3)`, df=`r round(tBunf[[2]]["df"][[1]],3)`, p=`r round(tBunf[[3]],3)`. My post-hoc explanation for this is that it may be a kind of interference, the visual analogue of the phonological interference identified in previous studies: the unfamiliar stimuli are visually similar enough to their overlearned Chinese characters that they're actually having a harder time processing them than English speakers are. But this is post-hoc obviously.
+One interesting thing that I wasn't expecting is that it looks like Chinese people actually do *worse* on the Unfamiliar stimuli -- in particular, nobody does well, the distribution cuts off at around 80% accuracy. I checked to see if there was a significant difference for Chinese people in performance on the Unfamiliar stimuli and on the Chinese stimuli, and indeed there is: language A: t=`r round(tAch[[1]]["t"][[1]],3)`, df=`r round(tAch[[2]]["df"][[1]],3)`, p=`r round(tAch[[3]],3)`; language B: t=`r round(tBch[[1]]["t"][[1]],3)`, df=`r round(tBch[[2]]["df"][[1]],3)`, p=`r round(tBch[[3]],3)`. However, there is no similar difference for English people: t=`r round(tAe[[1]]["t"][[1]],3)`, df=`r round(tAe[[2]]["df"][[1]],3)`, p=`r round(tAe[[3]],3)`; language B: t=`r round(tBe[[1]]["t"][[1]],3)`, df=`r round(tBe[[2]]["df"][[1]],3)`, p=`r round(tBe[[3]],3)`. Chinese people are also worse on unfamiliar stimuli than English people are: t=`r round(tAunf[[1]]["t"][[1]],3)`, df=`r round(tAunf[[2]]["df"][[1]],3)`, p=`r round(tAunf[[3]],3)`; language B: t=`r round(tBunf[[1]]["t"][[1]],3)`, df=`r round(tBunf[[2]]["df"][[1]],3)`, p=`r round(tBunf[[3]],3)`.
+My post-hoc explanation for this is that it may be a kind of interference, the visual analogue of the phonological interference identified in previous studies: the unfamiliar stimuli are visually similar enough to their overlearned Chinese characters that they're actually having a harder time processing them than English speakers are. But this is post-hoc obviously. 
 
 One way to at least get a sense of what is going on by breaking down the Chinese performance on the Unfamiliar stimuli to those who saw it first or second. One might imagine that if it's interference, perhaps those who saw it second would have done worse because of priming. However, the results (shown below) don't bear that out. I'm not sure that this means much though -- these were very common, very overlearned words, so it's quite plausible that there was a lot of interference even without priming. 
 
-```{r, echo=FALSE, fig.height=3, fig.width=10, fig.align='center'}
+```{r, echo=FALSE, fig.height=3, fig.width=10, fig.align='center', warning=FALSE, message=FALSE}
 newdu <- filter(dl,SLtype=="Unfamiliar")
 newdu$slOrder <- recode(newdu$slOrder,"1"="Chinese 1st","2"="Unfamiliar 1st")
 dUnfA <- dplyr::group_by(newdu,languageA,slOrder) %>%
@@ -206,7 +211,7 @@ grid.arrange(p1,p2,ncol=2)
 We might also care about whether people's behaviour showed the same *pattern* as Siegelman et al., 2017: that is, were the test items that their participants found hard the same test items that our participants found hard? We can evaluate this by calculating the correlation between performance on each item between them (which they reported) and our data. It is evident that all correlations are highly significant, so people were doing sensible things.
 
 \vspace{16pt}
-```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=8, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=8, fig.align='center', warning=FALSE, message=FALSE}
 p1 <- ggscatter(sl, x="baseitems", y="sl1items", add="reg.line", cor.coef=TRUE, size=2,
                 cor.method = "pearson", xlab = "Siegelman items", ylab="Our data",
                 cor.coef.coord=c(0.42,0.65))
@@ -225,7 +230,7 @@ So far it seems that the statistical learning tasks are behaving as expected, an
 
 Here we'll compare perceptual fluency from the first to the second time people did it. We might be curious about whether performance changes between the tasks, either due to fatigue or practice effects. Thus, the figure below shows overall performance on the First and Second task. 
 
-```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=5, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=5, fig.align='center', warning=FALSE, message=FALSE}
 pf$trial <- 2:48
 timecols <- c("mediumpurple","mediumpurple4")
 ordm <- gather(pf,"order","mean","means1","means2") %>% select(trial,order,mean)
@@ -255,7 +260,7 @@ Some things are immediately obvious. First, reassuringly, the time each stimulus
 We can ask an analogous question for PF as we did for SL: did it differ by participant language or stimulus type?
 
 \vspace{16pt}
-```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=9, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=9, fig.align='center', warning=FALSE, message=FALSE}
 newdpA <- dplyr::group_by(dl,PFtype,languageA) %>% 
   summarise(mean=mean(PFavg,na.rm = TRUE),
             sd = sd(PFavg,na.rm=TRUE),
@@ -310,7 +315,7 @@ grid.arrange(p1,p2,ncol=2)
 
 ```
 \vspace{16pt}
-```{r echo=FALSE, results="hide"}
+```{r echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 anovaPFA <- summary(aov(PFavg ~ PFtype + languageA + PFtype*languageA, data=dl))
 anovaPFB <- summary(aov(PFavg ~ PFtype + languageB + PFtype*languageB, data=dl))
 dl$PFtype <- as.factor(dl$PFtype)
@@ -324,7 +329,7 @@ We also did Bayesian ANOVAs with default priors showed the same thing: for the l
 
 Let's also look at how perceptual fluency predicts perceptual fluency overall.
 
-```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=9, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, fig.height=3, fig.width=9, fig.align='center', warning=FALSE, message=FALSE}
 ggscatter(dl, x="PF1avg", y="PF2avg", add="reg.line", cor.coef=TRUE, 
                 cor.method = "pearson", xlab = "PFscore time 1", ylab="PFscore time 2", size=2, 
                 cor.coef.coord=c(100,20)) +
@@ -334,7 +339,7 @@ ggscatter(dl, x="PF1avg", y="PF2avg", add="reg.line", cor.coef=TRUE,
 
 Now let's look within participant and stimulus
 
-```{r, echo=FALSE, fig.height=2.5, fig.width=9, fig.align='center'}
+```{r, echo=FALSE, fig.height=2.5, fig.width=9, fig.align='center', warning=FALSE, message=FALSE}
 chA <- filter(ds,languageA=="Chinese")
 engA <- filter(ds,languageA=="English")
 p1 <- ggscatter(engA, x="PFavgChinese", y="PFavgUnfamiliar", add="reg.line", cor.coef=TRUE, 
@@ -361,60 +366,13 @@ Using the Fisher transformation: z=`r fisherZ`, p=`r fisherP`.
  
 We can also ask how these measures relate to each other.
 
-# Relation of statistical learning to statistical learning
-
-We might expect that the correlation of people's performance on the two statistical learning tasks would be higher for the English participants (since both sets of stimuli are effectively unfamiliar) and lower for the Chinese participants (since the Chinese stimuli are familiar and hence presumably easier and involve different processes). This is analogous to the Same vs Different groups in the first study: the English participants are Same and the Chinese ones are Different.
-
-\vspace{16pt}
-```{r, echo=FALSE, fig.height=5, fig.width=9, fig.align='center'}
-p1 <- ggscatter(engA, x="SLcorrectChinese", y="SLcorrectUnfamiliar", add="reg.line", cor.coef=TRUE, 
-                cor.method = "pearson", xlab = "Chinese", ylab="Unfamiliar", size=2, 
-                cor.coef.coord=c(0.8,0.46)) +
-  ggtitle("English people, languageA") + theme(plot.title = element_text(hjust=0.5))
-p2 <- ggscatter(chA, x="SLcorrectChinese", y="SLcorrectUnfamiliar", add="reg.line", cor.coef=TRUE, 
-                cor.method = "pearson", xlab = "Chinese", ylab="Unfamiliar", size=2, 
-                cor.coef.coord=c(0.8,0.6)) +
-  ggtitle("Chinese people, languageA") + theme(plot.title = element_text(hjust=0.5))
-
-chB <- filter(ds,languageB=="Chinese")
-engB <- filter(ds,languageB=="English")
-p3 <- ggscatter(engB, x="SLcorrectChinese", y="SLcorrectUnfamiliar", add="reg.line", cor.coef=TRUE, 
-                cor.method = "pearson", xlab = "Chinese", ylab="Unfamiliar", size=2, 
-                cor.coef.coord=c(0.8,0.46)) +
-  ggtitle("English people, languageB") + theme(plot.title = element_text(hjust=0.5))
-p4 <- ggscatter(chB, x="SLcorrectChinese", y="SLcorrectUnfamiliar", add="reg.line", cor.coef=TRUE, 
-                cor.method = "pearson", xlab = "Chinese", ylab="Unfamiliar", size=2, 
-                cor.coef.coord=c(0.8,0.6)) +
-  ggtitle("Chinese people, languageB") + theme(plot.title = element_text(hjust=0.5))
-
-grid.arrange(p1,p2,p3,p4,ncol=2)
-
-# are these significant using fisher transformation
-rSameA <- cor.test(chA$SLcorrectChinese,chA$SLcorrectUnfamiliar)$estimate[[1]]
-rDifferentA <- cor.test(engA$SLcorrectChinese,engA$SLcorrectUnfamiliar)$estimate[[1]]
-nSameA <- nrow(chA)
-nDifferentA <- nrow(engA)
-fisherZA = ((0.5*log((1+rSameA)/(1-rSameA)))-(0.5*log((1+rDifferentA)/(1-rDifferentA))))/((1/(nSameA-3))+(1/(nDifferentA-3)))^0.5
-fisherPA = (2*(1-pnorm(abs(fisherZA))))
-
-rSameB <- cor.test(chB$SLcorrectChinese,chB$SLcorrectUnfamiliar)$estimate[[1]]
-rDifferentB <- cor.test(engB$SLcorrectChinese,engB$SLcorrectUnfamiliar)$estimate[[1]]
-nSameB <- nrow(chB)
-nDifferentB <- nrow(engB)
-fisherZB = ((0.5*log((1+rSameB)/(1-rSameB)))-(0.5*log((1+rDifferentB)/(1-rDifferentB))))/((1/(nSameB-3))+(1/(nDifferentB-3)))^0.5
-fisherPB = (2*(1-pnorm(abs(fisherZB))))
-```
-\vspace{16pt}
-
-It is indeed apparent that SLscore correlates higher within the English participants than the Chinese ones. We can statistically test this with the Fisher r-to-z transformation, which is unfortunately not significantly different: (languageA, z=`r fisherZA`, p=`r fisherPA`; languageB, z=`r fisherZB`, p=`r fisherPB`). 
-
 # Relation of statistical learning to perceptual fluency
 
 Given the hypotheses of our study, we're also interested in determining whether performance on the perceptual fluency task predicts performance on the statistical learning task. We can look at this both within stimuli of the same type and across stimuli of different types, and broken down among participants of each language group. 
 
 First let's do the simplest thing: comparing the correlations between stimuli of the **same** type (i.e., PF Unfamiliar to SL Unfamiliar, and PF Chinese to SL Chinese) vs **different** (i.e, PF Unfamiliar to SL Chinese and PF Chinese to SL Unfamiliar). We should expect that the correlation will be higher for the same stimuli. This is shown below:
 
-```{r, echo=FALSE, warning=FALSE, fig.height=4, fig.width=9, fig.align='center'}
+```{r, echo=FALSE, warning=FALSE, fig.height=4, fig.width=9, fig.align='center', message=FALSE}
 dl$corrType <- "Same"
 dl$corrType[dl$PFtype!=dl$SLtype] <- "Different"
 dSame <- filter(dl,corrType=="Same")
@@ -440,43 +398,4 @@ fisherP = (2*(1-pnorm(abs(fisherZ))))
 ```
 
 Our prediction was borne out. This time when we test this with the Fisher r-to-z transformation, it is significantly different: z=`r fisherZ`, p=`r fisherP`. 
-
-We can also break the **same** categories into Familiar and Unfamiliar, split between Chinese speakers and English speakers. We'd expect the correlation for English speakers to be the same for Familiar and Unfamiliar, but Chinese speakers to be more correlated for Unfamiliar stimuli (if they act like the participants in Experiment 1). 
-
-```{r, echo=FALSE, warning=FALSE, fig.height=5, fig.width=9, fig.align='center'}
-p1 <- ggscatter(chA, x="SLcorrectChinese", y="PFavgChinese", add="reg.line", cor.coef=TRUE, 
-                cor.method = "pearson", xlab = "SL Chinese", ylab="PF Chinese", size=2, 
-                cor.coef.coord=c(0.6,0.46)) +
-  ggtitle("Chinese people, Chinese stimuli") + theme(plot.title = element_text(hjust=0.5))
-p2 <- ggscatter(chA, x="SLcorrectUnfamiliar", y="PFavgUnfamiliar", add="reg.line", cor.coef=TRUE, 
-                cor.method = "pearson", xlab = "SL Unfamiliar", ylab="PF Unfamiliar", size=2, 
-                cor.coef.coord=c(0.6,0.46)) +
-  ggtitle("Chinese people, Unfamiliar stimuli") + theme(plot.title = element_text(hjust=0.5))
-
-p3 <- ggscatter(engA, x="SLcorrectChinese", y="PFavgChinese", add="reg.line", cor.coef=TRUE, 
-                cor.method = "pearson", xlab = "SL Chinese", ylab="PF Chinese", size=2, 
-                cor.coef.coord=c(0.6,0.46)) +
-  ggtitle("English people, Chinese stimuli") + theme(plot.title = element_text(hjust=0.5))
-p4 <- ggscatter(engA, x="SLcorrectUnfamiliar", y="PFavgUnfamiliar", add="reg.line", cor.coef=TRUE, 
-                cor.method = "pearson", xlab = "SL Unfamiliar", ylab="PF Unfamiliar", size=2, 
-                cor.coef.coord=c(0.6,0.46)) +
-  ggtitle("English people, Unfamiliar Stimuli") + theme(plot.title = element_text(hjust=0.5))
-
-grid.arrange(p1,p2,p3,p4,ncol=2)
-
-# are these significant using fisher transformation
-rSameA <- cor.test(chA$SLcorrectChinese,chA$SLcorrectUnfamiliar)$estimate[[1]]
-rDifferentA <- cor.test(engA$SLcorrectChinese,engA$SLcorrectUnfamiliar)$estimate[[1]]
-nSameA <- nrow(chA)
-nDifferentA <- nrow(engA)
-fisherZA = ((0.5*log((1+rSameA)/(1-rSameA)))-(0.5*log((1+rDifferentA)/(1-rDifferentA))))/((1/(nSameA-3))+(1/(nDifferentA-3)))^0.5
-fisherPA = (2*(1-pnorm(abs(fisherZA))))
-
-rSameB <- cor.test(chB$SLcorrectChinese,chB$SLcorrectUnfamiliar)$estimate[[1]]
-rDifferentB <- cor.test(engB$SLcorrectChinese,engB$SLcorrectUnfamiliar)$estimate[[1]]
-nSameB <- nrow(chB)
-nDifferentB <- nrow(engB)
-fisherZB = ((0.5*log((1+rSameB)/(1-rSameB)))-(0.5*log((1+rDifferentB)/(1-rDifferentB))))/((1/(nSameB-3))+(1/(nDifferentB-3)))^0.5
-fisherPB = (2*(1-pnorm(abs(fisherZB))))
-```
 
