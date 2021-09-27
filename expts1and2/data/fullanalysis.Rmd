@@ -28,26 +28,38 @@ differentColour <- "red4"
 
 ```{r, echo=FALSE}
 load("fulldataset.RData")
-d1novelA <- subset(d1all,SL1condition=="UnfSimple")
-d1familiar <- subset(d1all,SL1condition=="Familiar")
-d1novelB <- subset(d1all, SL1condition=="Unfamiliar")
+d1all$SL1condition <- as.factor(d1all$SL1condition)
+levels(d1all$SL1condition) <- c("Lᴇᴛᴛᴇʀ", "Cᴏᴍᴘʟᴇx", "Sɪᴍᴘʟᴇ")
+d1novelA <- subset(d1all,SL1condition=="Sɪᴍᴘʟᴇ")
+d1familiar <- subset(d1all,SL1condition=="Lᴇᴛᴛᴇʀ")
+d1novelB <- subset(d1all, SL1condition=="Cᴏᴍᴘʟᴇx")
 n1Amale <- sum(d1novelA$gender=="male",na.rm=TRUE)
 n1Ausa <- sum(d1novelA$country=="USA",na.rm=TRUE)
 n <- nrow(d)
 nmale <- sum(d$gender=="male",na.rm=TRUE)
 nusa <- sum(d$country=="USA",na.rm=TRUE)
-dlEasy <- subset(dl,SLcondition=="Familiar")
-dlHard <- subset(dl,SLcondition=="Unfamiliar")
-d2easy <- subset(d,SL2condition=="Familiar")
-d2hard <- subset(d,SL2condition=="Unfamiliar")
+d$SL1condition <- as.factor(d$SL1condition)
+d$SL2condition <- as.factor(d$SL2condition)
+d$PF1type <- as.factor(d$PF1type)
+d$PF2type <- as.factor(d$PF2type)
+levels(d$SL1condition) <- c("Lᴇᴛᴛᴇʀ", "Cᴏᴍᴘʟᴇx")
+levels(d$SL2condition) <- c("Lᴇᴛᴛᴇʀ", "Cᴏᴍᴘʟᴇx")
+levels(d$PF1type) <- c("Lᴇᴛᴛᴇʀ", "Cᴏᴍᴘʟᴇx")
+levels(d$PF2type) <- c("Lᴇᴛᴛᴇʀ", "Cᴏᴍᴘʟᴇx")
+levels(dl$SLcondition) <- c("Lᴇᴛᴛᴇʀ", "Cᴏᴍᴘʟᴇx")
+levels(dl$PFtype) <- c("Lᴇᴛᴛᴇʀ", "Cᴏᴍᴘʟᴇx")
+dlEasy <- subset(dl,SLcondition=="Lᴇᴛᴛᴇʀ")
+dlHard <- subset(dl,SLcondition=="Cᴏᴍᴘʟᴇx")
+d2easy <- subset(d,SL2condition=="Lᴇᴛᴛᴇʀ")
+d2hard <- subset(d,SL2condition=="Cᴏᴍᴘʟᴇx")
 n2easy <- nrow(d2easy)
 n2hard <- nrow(d2hard)
 ```
 
 # Summary of datasets
 
-For Part 1, 160 people were run on AMT in an experiment that took 15-20 minutes and paid \$3.40USD. Before analysing the data 14 were excluded for getting less than three of the four words in the sequence right (9 in **Familiar** and 5 in **Unfamiliar**). For Part 2, the remaining 146 were invited back to do a 20-minute follow-up that paid \$4USD. Of those, 135 returned (a retention rate of `r 100*round(135/146,1)`%). Three of them reported less than three words in the sequence and were excluded. This left `r n` people in the dataset, with
-`r sum(d$SL2condition=="Familiar")` in the **Familiar** condition and `r sum(d$SL2condition=="Unfamiliar")` in the **Unfamiliar** condition. 
+For Part 1, 160 people were run on AMT in an experiment that took 15-20 minutes and paid \$3.40USD. Before analysing the data 14 were excluded for getting less than three of the four words in the sequence right (9 in Lᴇᴛᴛᴇʀ and 5 in Cᴏᴍᴘʟᴇx). For Part 2, the remaining 146 were invited back to do a 20-minute follow-up that paid \$4USD. Of those, 135 returned (a retention rate of `r 100*round(135/146,1)`%). Three of them reported less than three words in the sequence and were excluded. This left `r n` people in the dataset, with
+`r sum(d$SL2condition=="Lᴇᴛᴛᴇʀ")` in the Lᴇᴛᴛᴇʀ condition and `r sum(d$SL2condition=="Cᴏᴍᴘʟᴇx")` in the Cᴏᴍᴘʟᴇx condition. 
 Across the whole dataset, `r nmale` (i.e., `r round(100*nmale/n,1)`%) of them were male and `r nusa` (i.e., `r round(100*nusa/n,1)`%) were from the US. Ages ranged from `r min(d$age,na.rm=TRUE)` to `r max(d$age,na.rm=TRUE)` with a mean of `r round(mean(d$age,na.rm=TRUE),1)`.
 
 ```{r, echo=FALSE}
@@ -63,22 +75,22 @@ Our first step is just to make sure people are behaving sensibly on the SL tasks
 
 ## Part 1
 
-First let's look at the histograms of all responses to determine whether they look like those reported in Seigelman et al., 2017, and to see whether the data look normal. This includes the **Familiar** and **Unfamiliar** conditions, as well as **unfSimple** (explained below).
+First let's look at the histograms of all responses to determine whether they look like those reported in Seigelman et al., 2017, and to see whether the data look normal. This includes the Lᴇᴛᴛᴇʀ and Cᴏᴍᴘʟᴇx conditions, as well as Sɪᴍᴘʟᴇ (explained below).
 
 \vspace{16pt}
-```{r, echo=FALSE, fig.height=3, fig.width=9.5, fig.align='center'}
+```{r, echo=FALSE, fig.height=3, fig.width=9.5, fig.align='center', message=FALSE, warning=FALSE}
 par(mfrow=c(1,3))
 hist(dlEasy$SLcorrect*42,col=easyColour,breaks=15,xlim=c(0,42),
-     main="SL: Familiar",xlab="# correct")
+     main="SL: Lᴇᴛᴛᴇʀ",xlab="# correct")
 hist(dlHard$SLcorrect*42,col=hardColour,breaks=15,xlim=c(0,42),
-     main="SL: Unfamiliar",xlab="# correct")
+     main="SL: Cᴏᴍᴘʟᴇx",xlab="# correct")
 hist(d1all$SL1correct*42,col=novelAColour,breaks=15,xlim=c(0,42),
-     main="SL: UnfSimple",xlab="# correct")
+     main="SL: Sɪᴍᴘʟᴇ",xlab="# correct")
 ```
 \vspace{16pt}
 These look pretty reasonable as well. Is the accuracy different between conditions?
 \vspace{16pt}
-```{r, echo=FALSE, fig.height=3, fig.width=4, fig.align='center'}
+```{r, echo=FALSE, fig.height=3, fig.width=4, fig.align='center', message=FALSE, warning=FALSE}
 newdl <- dplyr::group_by(dl,SLcondition) %>% 
   summarise(mean=mean(SLcorrect,na.rm = TRUE),
             sd = sd(SLcorrect,na.rm=TRUE),
@@ -102,6 +114,9 @@ ggplot(data = newdl, aes(x = SLcondition, y = mean, fill = SLcondition)) +
         axis.title.y=element_text(size = rel(1.1)),
         legend.position="none", #axis.text.x=element_blank(),
         panel.background = element_rect(fill = "white", colour = "black"))
+
+ggsave("figures/exp1_2_slaccuracy.png",device="png",
+       width=8,height=6, units="cm")
 ```
 \vspace{16pt}
 It looks like indeed there is a difference in performance. To evaluate this statistically we ran a t-test with accuracy as our outcome variable and condition as predictor. 
@@ -111,33 +126,39 @@ tt <- t.test(SLcorrect ~ SLcondition, data=dl)
 ttd <- cohensD(SLcorrect ~ SLcondition, data=dl)
 bf <- ttestBF(formula = SLcorrect ~ SLcondition, data=dl)
 reportedBF <- exp(1)^bf@bayesFactor$bf
+wt <- wilcox.test(SLcorrect ~ SLcondition, data=dl)
 # compare to chance
-oet <- t.test(dl$SLcorrect[dl$SLcondition=="Unfamiliar"],mu=16.75/42)
-doet <- cohensD(x=dl$SLcorrect[dl$SLcondition=="Unfamiliar"],y=16.75/42)
-oht <- t.test(dl$SLcorrect[dl$SLcondition=="Familiar"],mu=16.75/42)
-doht <- cohensD(x=dl$SLcorrect[dl$SLcondition=="Familiar"],y=16.75/42)
+oet <- t.test(dl$SLcorrect[dl$SLcondition=="Cᴏᴍᴘʟᴇx"],mu=16.75/42)
+doet <- cohensD(x=dl$SLcorrect[dl$SLcondition=="Cᴏᴍᴘʟᴇx"],y=16.75/42)
+oht <- t.test(dl$SLcorrect[dl$SLcondition=="Lᴇᴛᴛᴇʀ"],mu=16.75/42)
+doht <- cohensD(x=dl$SLcorrect[dl$SLcondition=="Lᴇᴛᴛᴇʀ"],y=16.75/42)
+oewt <- wilcox.test(dl$SLcorrect[dl$SLcondition=="Cᴏᴍᴘʟᴇx"],mu=16.75/42)
+ohwt <- wilcox.test(dl$SLcorrect[dl$SLcondition=="Lᴇᴛᴛᴇʀ"],mu=16.75/42)
 ```
 
-Performance in both conditions is different from chance (**Familiar**: t(`r round(oht$parameter,1)`)= `r round(oht$statistic,2)`, p=`r round(oht$p.value,4)`, d=`r round(doht,3)`; **Unfamiliar**: t(`r round(oet$parameter,1)`)= `r round(oet$statistic,2)`, p=`r round(oet$p.value,4)`, d=`r round(doet,3)`). 
+Performance in both conditions is different from chance when chance is calculated as 16.75/42 (Lᴇᴛᴛᴇʀ: t(`r round(oht$parameter,1)`)= `r round(oht$statistic,2)`, p=`r round(oht$p.value,4)`, d=`r round(doht,3)`; Cᴏᴍᴘʟᴇx: t(`r round(oet$parameter,1)`)= `r round(oet$statistic,2)`, p=`r round(oet$p.value,4)`, d=`r round(doet,3)`). We find the same thing if we use a non-parametric alternative to the t-test, the Wilcoxon: Lᴇᴛᴛᴇʀ: V=`r ohwt$statistic[[1]]`, p=`r round(ohwt$p.value,4)`; Cᴏᴍᴘʟᴇx: V=`r oewt$statistic[[1]]`, p=`r round(oewt$p.value,4)`.
 
-The results of the t-test are also significant (t(`r round(tt$parameter,1)`)=`r round(tt$statistic,2)`, p=`r round(tt$p.value,4)`, d=`r round(ttd,3)`). A Bayesian t-test with default priors for effect size finds that the data were `r reportedBF` in favour of the alternative hypothesis (i.e., were `r reportedBF` times more likely to occur under the model that performance is different by condition).
+The results of the t-test are also significant (t(`r round(tt$parameter,1)`)=`r round(tt$statistic,2)`, p=`r round(tt$p.value,4)`, d=`r round(ttd,3)`), and this doesn't change if we use a Wilcoxon instead: W=`r wt$statistic[[1]]`, p=`r round(wt$p.value,4)`. A Bayesian t-test with default priors for effect size finds that the data were `r reportedBF` in favour of the alternative hypothesis (i.e., were `r reportedBF` times more likely to occur under the model that performance is different by condition).
 
 We might also care about whether people's behaviour showed the same *pattern* as Siegelman et al., 2017: that is, were the test items that their participants found hard the same test items that our participants found hard? We can evaluate this by calculating the correlation between performance on each item between them (which they reported) and our data. It is evident that all correlations are highly significant.
 \vspace{16pt}
-```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center'}
+```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center', message=FALSE, warning=FALSE}
 p1 <- ggscatter(SL1, x="Base", y="Familiar", add="reg.line", cor.coef=TRUE, size=2,
                 cor.method = "pearson", xlab = "Siegelman items", ylab="Our data",
                 cor.coef.coord=c(0.42,0.65))
-p1 <- p1 + ggtitle("Familiar") + theme(plot.title = element_text(hjust=0.5))
+p1 <- p1 + ggtitle("Lᴇᴛᴛᴇʀ") + theme(plot.title = element_text(hjust=0.5))
 p2 <- ggscatter(SL1, x="Base", y="Unfamiliar", add="reg.line", cor.coef=TRUE, size=2,
                 cor.method = "pearson", xlab = "Siegelman items", ylab="Our data",
                 cor.coef.coord=c(0.42,0.65))
-p2 <- p2 + ggtitle("Unfamiliar") + theme(plot.title = element_text(hjust=0.5))
+p2 <- p2 + ggtitle("Cᴏᴍᴘʟᴇx") + theme(plot.title = element_text(hjust=0.5))
 p3 <- ggscatter(SL1, x="Base", y="UnfSimple", add="reg.line", cor.coef=TRUE, size=2,
                 cor.method = "pearson", xlab = "Siegelman items", ylab="Our data",
                 cor.coef.coord=c(0.42,0.65))
-p3 <- p3 + ggtitle("UnfSimple") + theme(plot.title = element_text(hjust=0.5))
-grid.arrange(p1,p2,p3,ncol=3)
+p3 <- p3 + ggtitle("Sɪᴍᴘʟᴇ") + theme(plot.title = element_text(hjust=0.5))
+p <- grid.arrange(p1,p2,p3,ncol=3)
+
+ggsave("figures/exp1_2_siegelmancorrs.png",plot=p,device="png",
+       width=16,height=6, units="cm")
 ```
 
 
@@ -145,9 +166,9 @@ grid.arrange(p1,p2,p3,ncol=3)
 
 So far it seems that the statistical learning tasks are behaving as expected, and we're getting significant differences in performances based on the visual complexity / familiarity of the stimuli involved. Let's also check that the perceptual fluency tasks are behaving in a sensible fashion. This is a bit harder because they are new tasks so there's no published literature to compare to, but as a first stab we can look at what happens to the duration that the target item flashes over the course of the task (which I'll refer to as the *lag time*). Remember that it gets faster when people are more accurate, so we should expect that in easier tasks it should end up being on average faster. We should also expect it to stabilise somewhere.
 
-We can make two comparisons. First, remember that each person saw two perceptual fluency tasks in a row. We might be curious about whether performance changes between the tasks, either due to fatigue or practice effects. Thus, the figure on the left below shows overall performance on the First and Second task. Second, some people saw perceptual fluency tasks with **Familiar** items, and some with **Unfamiliar** items. If the length that the item flashes is really related to their complexity, we would expect that in the **Familiar** condition it doesn't need to flash as long. This is shown in the figure on the right.
+We can make two comparisons. First, remember that each person saw two perceptual fluency tasks in a row. We might be curious about whether performance changes between the tasks, either due to fatigue or practice effects. Thus, the figure on the left below shows overall performance on the First and Second task. Second, some people saw perceptual fluency tasks with Lᴇᴛᴛᴇʀ items, and some with Cᴏᴍᴘʟᴇx items. If the length that the item flashes is really related to their complexity, we would expect that in the Lᴇᴛᴛᴇʀ condition it doesn't need to flash as long. This is shown in the figure on the right.
 
-```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center'}
+```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center', message=FALSE, warning=FALSE}
 # first do by order
 PFtimes <- PFmeans
 PFtimesSD <- PFsds
@@ -186,8 +207,8 @@ PFconditionSD$PF1 <- NULL
 PFconditionSD$PF2 <- NULL
 PFcondition$trial <- seq(1,48)
 PFconditionSD$trial <- seq(1,48)
-colnames(PFcondition) <- c("Familiar","Unfamiliar","Trial")
-colnames(PFconditionSD) <- c("Familiar","Unfamiliar","Trial")
+colnames(PFcondition) <- c("Lᴇᴛᴛᴇʀ","Cᴏᴍᴘʟᴇx","Trial")
+colnames(PFconditionSD) <- c("Lᴇᴛᴛᴇʀ","Cᴏᴍᴘʟᴇx","Trial")
 condcols <- c(easyColour,hardColour)
 PFcondition <- melt(PFcondition,id.vars="Trial",variable.name="Condition")
 PFconditionSD <- melt(PFconditionSD,id.vars="Trial",variable.name="Condition")
@@ -206,16 +227,18 @@ p2 <- p2 + geom_errorbar(aes(ymin=value-condse, ymax=value+condse),
         axis.title.y=element_text(size = rel(1.1)), 
         legend.position = "none",
         panel.background = element_rect(fill = "white", colour = "black"))
-grid.arrange(p1,p2,ncol=2)
+p <- grid.arrange(p1,p2,ncol=2)
+ggsave("figures/exp1_2_pfovertime.png",plot=p,device="png",
+       width=12,height=6, units="cm")
 ```
 \vspace{16pt}
 
-Some things are immediately obvious. First, reassuringly, the time each stimulus flashed does go down, and doesn't bobble around. Second, it appears as though there are differences in both order (people are faster for the first task, so fatigue may be a factor) and condition (people are faster for the **Familiar** items, which is nice). However, we don't know if these effects are significant.
+Some things are immediately obvious. First, reassuringly, the time each stimulus flashed does go down, and doesn't bobble around. Second, it appears as though there are differences in both order (people are faster for the first task, so fatigue may be a factor) and condition (people are faster for the Lᴇᴛᴛᴇʀ items, which is nice). However, we don't know if these effects are significant.
 
 Unfortunately, we can't run statistical tests on multiple different trials, because the trials are all very non-trivially dependent on each other. We therefore feed each person's average lag time in and test whether these differ by order or condition.  
 \vspace{16pt}
 
-```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center'}
+```{r, echo=FALSE, fig.height=3, fig.width=8, fig.align='center', warning=FALSE, message=FALSE}
 # do by condition
 pf <- dplyr::group_by(dl,PFtype) %>% 
   summarise(mean=mean(PFpauseavg,na.rm = TRUE),
@@ -266,24 +289,70 @@ pa2 <- ggplot(data = ord, aes(x = session, y = mean, fill = session)) +
         legend.position="none", #axis.text.x=element_blank(),
         panel.background = element_rect(fill = "white", colour = "black"))
 
-grid.arrange(pa2,pa1,ncol=2)
+p <- grid.arrange(pa2,pa1,ncol=2)
+ggsave("figures/exp1_2_pfscore.png",plot=p,device="png",
+       width=12,height=6, units="cm")
+
+pPFaccuracy <- ggplot(data = pf, aes(x = PFtype, y = mean, fill = PFtype)) +
+  geom_point(data=dl,aes(x = PFtype, y = PFpauseavg, colour=PFtype), 
+             position="jitter", alpha=0.6, show.legend=FALSE) +
+  scale_colour_manual(values=c(easyColour,hardColour)) +
+  geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
+  labs(y = "PFscore") + 
+  ggtitle("(b) Perceptual fluency") +
+  coord_cartesian(ylim=c(50,200)) +
+  scale_fill_manual(values=c(easyColour,hardColour)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+
+pSLaccuracy <- ggplot(data = newdl, 
+                      aes(x = SLcondition, y = mean, fill = SLcondition)) +
+  geom_point(data=dl,aes(x = SLcondition, y = SLcorrect, colour=SLcondition), 
+             position="jitter", alpha=0.6, show.legend=FALSE) +
+  scale_colour_manual(values=c(easyColour,hardColour)) +
+  geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
+  labs(y = "SLscore") + 
+  ggtitle("(a) Statistical learning") +
+  coord_cartesian(ylim=c(0.3,1.0)) +
+  scale_fill_manual(values=c(easyColour,hardColour)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+
+p <- grid.arrange(pSLaccuracy,pPFaccuracy,ncol=2)
+ggsave("figures/exp1_2_allaccuracy.png",plot=p,device="png",
+       width=15,height=6, units="cm")
 ```
 \vspace{16pt}
-```{r echo=FALSE, results="hide"}
+```{r echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 ## t-tests
 pfo <- t.test(dl$PFpauseavg[dl$session=="1"],dl$PFpauseavg[dl$session=="2"])
 pfod <- cohensD(dl$PFpauseavg[dl$session=="1"],dl$PFpauseavg[dl$session=="2"])
 pfpf <- cor.test(dl$PFpauseavg[dl$session=="1"],dl$PFpauseavg[dl$session=="2"])
-pfc <- t.test(dl$PFpauseavg[dl$PFtype=="Familiar"],dl$PFpauseavg[dl$PFtype=="Unfamiliar"])
-pfcd <- cohensD(dl$PFpauseavg[dl$PFtype=="Familiar"],dl$PFpauseavg[dl$PFtype=="Unfamiliar"])
+pfpfs <- cor.test(dl$PFpauseavg[dl$session=="1"],dl$PFpauseavg[dl$session=="2"],method="spearman")
+pfc <- t.test(dl$PFpauseavg[dl$PFtype=="Lᴇᴛᴛᴇʀ"],dl$PFpauseavg[dl$PFtype=="Cᴏᴍᴘʟᴇx"])
+pfcd <- cohensD(dl$PFpauseavg[dl$PFtype=="Lᴇᴛᴛᴇʀ"],dl$PFpauseavg[dl$PFtype=="Cᴏᴍᴘʟᴇx"])
+pfow <- wilcox.test(dl$PFpauseavg[dl$session=="1"],dl$PFpauseavg[dl$session=="2"])
+pfcw <- wilcox.test(dl$PFpauseavg[dl$PFtype=="Lᴇᴛᴛᴇʀ"],dl$PFpauseavg[dl$PFtype=="Cᴏᴍᴘʟᴇx"])
 ```
 
-Is this significant? In order to evaluate this, I ran two separate t-tests, one looking at lagtime by test order (i.e., corresponding to the figure on the left) and one at lagtime by condition (i.e., corresponding to the figure on the right). Order was not significant (t(`r round(pfo$parameter,1)`)=`r round(pfo$statistic,2)`, p=`r round(pfo$p.value,4)`, d=`r round(pfod,3)`) but condition was (t(`r round(pfc$parameter,1)`)=`r round(pfc$statistic,2)`, p=0.0006, d=`r round(pfcd,3)`).
-This is pretty cool: it means that, as predicted, people did better on the perceptual fluency task when the stimulus items involved were **Familiar** ones. That said, performance on the two back-to-back perceptual fluency tasks was of course also highly correlated with one another (r = `r round(pfpf$estimate,4)`, p<0.0001).
+Is this significant? In order to evaluate this, I ran two separate t-tests, one looking at lagtime by test order (i.e., corresponding to the figure on the left) and one at lagtime by condition (i.e., corresponding to the figure on the right). Order was not significant (t(`r round(pfo$parameter,1)`)=`r round(pfo$statistic,2)`, p=`r round(pfo$p.value,4)`, d=`r round(pfod,3)`) but condition was (t(`r round(pfc$parameter,1)`)=`r round(pfc$statistic,2)`, p=0.0006, d=`r round(pfcd,3)`). We get the same results if we run a Wilcoxon: order W=`r pfow$statistic[[1]]`, p=`r round(pfow$p.value,4)`, condition W=`r pfcw$statistic[[1]]`, p=`r round(pfcw$p.value,4)`.
+This is pretty cool: it means that, as predicted, people did better on the perceptual fluency task when the stimulus items involved were Lᴇᴛᴛᴇʀ ones. That said, performance on the two back-to-back perceptual fluency tasks was of course also highly correlated with one another (r = `r round(pfpf$estimate,4)`, p<0.0001, pearson; rho = `r round(pfpfs$estimate,4)`, p<0.0001, spearman).
 
 Of course, these overall correlations with each other could just be because they were back-to-back. One wonders to what extent the PF task is reflecting stimulus-dependent learning vs general efficient processing speed. To kind of get a sense of this, we can compare correlations in the PF task for the people who saw the same stimulus type both times vs a different stimulus type both times, as below:
 
-```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', warning=FALSE}
+```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', message=FALSE, warning=FALSE}
 # first, get the different ones
 ndp <- filter(d,condition=="different") 
 ndp$PF1pauseavg[which(ndp$PF1pauseavg==387.5)] <- NA # removing 4SD outlier
@@ -294,14 +363,16 @@ nsp <- filter(d,condition=="same")
 p1 <- ggscatter(ndp, x="PF1pauseavg", y="PF2pauseavg", add="reg.line", cor.coef=TRUE, 
                 size=2, cor.method = "pearson", xlab = "PFscore time 1", 
                 ylab="PFscore time 2",cor.coef.coord=c(170,0.8))
-p1 <- p1 + ggtitle("PF to PF: Different") + theme(plot.title = element_text(hjust=0.5))
+p1 <- p1 + ggtitle("PF to PF: Dɪғғᴇʀᴇɴᴛ") + theme(plot.title = element_text(hjust=0.5))
 
 p2 <- ggscatter(nsp, x="PF1pauseavg", y="PF2pauseavg", add="reg.line", cor.coef=TRUE, 
                 size=2, cor.method = "pearson", xlab = "PFscore time 1", 
                 ylab="PFscore time 2",cor.coef.coord=c(170,0.8))
-p2 <- p2 + ggtitle("PF to PF: Same") + theme(plot.title = element_text(hjust=0.5))
+p2 <- p2 + ggtitle("PF to PF: Sᴀᴍᴇ") + theme(plot.title = element_text(hjust=0.5))
 
-grid.arrange(p1,p2,ncol=2)
+p <- grid.arrange(p1,p2,ncol=2)
+ggsave("figures/exp1_2_pftopf.png",plot=p,device="png",
+       width=14,height=6, units="cm")
 
 # are these significant using fisher transformation
 corSame = cor.test(nsp$PF1pauseavg, nsp$PF2pauseavg, method="pearson")
@@ -316,24 +387,28 @@ fisherP = (2*(1-pnorm(abs(fisherZ))))
 
 We can statistically test this with the Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`.
 
-Let's also break the same one down to whether the stimuli were familiar or unfamiliar.
 
-```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', warning=FALSE}
+Let's also break the same one down to whether the stimuli were Lᴇᴛᴛᴇʀ or Cᴏᴍᴘʟᴇx
+
+```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', message=FALSE, warning=FALSE}
 # now find the equivalent ones from the "same"" condition
-nsf <- filter(nsp,SL1condition=="Familiar")
-nsu <- filter(nsp,SL1condition=="Unfamiliar")
+nsf <- filter(nsp,SL1condition=="Lᴇᴛᴛᴇʀ")
+nsu <- filter(nsp,SL1condition=="Cᴏᴍᴘʟᴇx")
 
 p1 <- ggscatter(nsf, x="PF1pauseavg", y="PF2pauseavg", add="reg.line", cor.coef=TRUE, 
                 size=2, cor.method = "pearson", xlab = "PFscore time 1", 
                 ylab="PFscore time 2",cor.coef.coord=c(120,0.8))
-p1 <- p1 + ggtitle("PF to PF: Familiar") + theme(plot.title = element_text(hjust=0.5))
+p1 <- p1 + ggtitle("PF to PF: Lᴇᴛᴛᴇʀ") + 
+  theme(plot.title = element_text(hjust=0.5))
 
 p2 <- ggscatter(nsu, x="PF1pauseavg", y="PF2pauseavg", add="reg.line", cor.coef=TRUE, 
                 size=2, cor.method = "pearson", xlab = "PFscore time 1", 
                 ylab="PFscore time 2",cor.coef.coord=c(170,0.8))
-p2 <- p2 + ggtitle("PF to PF: Unfamiliar") + theme(plot.title = element_text(hjust=0.5))
+p2 <- p2 + ggtitle("PF to PF: Cᴏᴍᴘʟᴇx") + theme(plot.title = element_text(hjust=0.5))
 
-grid.arrange(p1,p2,ncol=2)
+p <- grid.arrange(p1,p2,ncol=2)
+ggsave("figures/exp1_2_pftopfcondition.png",plot=p,device="png",
+       width=14,height=6, units="cm")
 
 # are these significant using fisher transformation
 corFam = cor.test(nsf$PF1pauseavg, nsf$PF2pauseavg, method="pearson")
@@ -348,15 +423,16 @@ fisherP = (2*(1-pnorm(abs(fisherZ))))
 
 We can statistically test this with the Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`.
 
+
 Finally, next, we really get to look at the meat of our experiment: how these measures relate to each other. 
 
 # Relation of statistical learning to statistical learning
 
-Our first question is how people's statistical learning performance on the two separate days compares to each other. As you'll recall, some people saw the **Same** kinds of stimulus sets on both days (either both **Familiar** or both **Unfamiliar**) and some people saw **Different** types of stimulus sets (some saw **Familiar** on Session 1 and **Unfamiliar** on Session 2, and some vice-versa). In no case did anybody see the same *items* on both days -- even if it was the same kind of stimulus, the items were different. Thus, for instance, if your stimulus contained a star on Session 1 then it did not contain a star on Session 2. This means that any correlation in performance cannot be explained by trivial familiarity with the specific stimulus items.
+Our first question is how people's statistical learning performance on the two separate days compares to each other. As you'll recall, some people saw the Sᴀᴍᴇ kinds of stimulus sets on both days (either both Lᴇᴛᴛᴇʀ or both Cᴏᴍᴘʟᴇx) and some people saw Dɪғғᴇʀᴇɴᴛ types of stimulus sets (some saw Lᴇᴛᴛᴇʀ on Session 1 and Cᴏᴍᴘʟᴇx on Session 2, and some vice-versa). In no case did anybody see the same *items* on both days -- even if it was the same kind of stimulus, the items were different. Thus, for instance, if your stimulus contained a star on Session 1 then it did not contain a star on Session 2. This means that any correlation in performance cannot be explained by trivial familiarity with the specific stimulus items.
 
-Our key question is whether people who saw the **Same** kind of stimulus set on both days had a higher correlation in their statistical learning accuracy between tasks than people who saw **Different** stimulus sets. If individual differences in performance on this task are *just* about statistical learning, these correlations should be the same, since the underlying statistical learning is exactly the same -- all that differs is the stimulus type. If, on the other hand, perceptual fluency plays an important role, then one would expect a larger correlation for people who saw the **Same** stimulus sets and a smaller (or nonexistent) one for people who saw **Different** ones. These correlations are shown below. 
+Our key question is whether people who saw the Sᴀᴍᴇ kind of stimulus set on both days had a higher correlation in their statistical learning accuracy between tasks than people who saw Dɪғғᴇʀᴇɴᴛ stimulus sets. If individual differences in performance on this task are *just* about statistical learning, these correlations should be the same, since the underlying statistical learning is exactly the same -- all that differs is the stimulus type. If, on the other hand, perceptual fluency plays an important role, then one would expect a larger correlation for people who saw the Sᴀᴍᴇ stimulus sets and a smaller (or nonexistent) one for people who saw Dɪғғᴇʀᴇɴᴛ ones. These correlations are shown below. 
 \vspace{16pt}
-```{r, echo=FALSE, fig.height=3.3, fig.width=8, fig.align='center'}
+```{r, echo=FALSE, fig.height=3.3, fig.width=8, fig.align='center', message=FALSE, warning=FALSE}
 First <- d$SL1correct[d$condition=="same"]
 Second <- d$SL2correct[d$condition=="same"]
 same <- data.frame(First,Second)
@@ -365,8 +441,9 @@ rSame = corSame$estimate
 nSame = sum(complete.cases(First,Second))
 p1 <- ggscatter(same, x="First", y="Second", add="reg.line", cor.coef=TRUE, 
                 cor.method = "pearson", xlab = "Session 1", ylab="Session 2", size=2, 
-                cor.coef.coord=c(0.8,0.46))
-p1 <- p1 + ggtitle("SAME familiarity") + theme(plot.title = element_text(hjust=0.5))
+                cor.coef.coord=c(0.6,0.4),
+                cor.coef.size=3)
+p1 <- p1 + ggtitle("Sᴀᴍᴇ stimulus type") + theme(plot.title = element_text(hjust=0.5))
 First <- d$SL1correct[d$condition=="different"]
 Second <- d$SL2correct[d$condition=="different"]
 different <- data.frame(First,Second)
@@ -375,9 +452,13 @@ rDifferent = corDifferent$estimate
 nDifferent = sum(complete.cases(First,Second))
 p2 <- ggscatter(different, x="First", y="Second", add="reg.line",
                 cor.coef=TRUE, cor.method = "pearson", xlab = "Session 1", ylab="Session 2",
-                size=2, cor.coef.coord=c(0.35,0.9))
-p2 <- p2 + ggtitle("DIFFERENT familiarity") + theme(plot.title = element_text(hjust=0.5))
-grid.arrange(p1,p2,ncol=2)
+                size=2, cor.coef.coord=c(0.27,0.87),
+                cor.coef.size=3)
+p2 <- p2 + ggtitle("Dɪғғᴇʀᴇɴᴛ stimulus type") + theme(plot.title = element_text(hjust=0.5))
+p <- grid.arrange(p1,p2,ncol=2)
+ggsave("figures/exp1_2_sltosl.png",plot=p,device="png",
+       width=14,height=6, units="cm")
+
 
 # are these significant using fisher transformation
 fisherZ = ((0.5*log((1+rSame)/(1-rSame)))-(0.5*log((1+rDifferent)/(1-rDifferent))))/((1/(nSame-3))+(1/(nDifferent-3)))^0.5
@@ -385,13 +466,13 @@ fisherP = (2*(1-pnorm(abs(fisherZ))))
 ```
 \vspace{16pt}
 
-It is indeed apparent that **Same** appears to correlate with each other much better than **Different**. We can statistically test this with the Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`. So these are indeed significantly different.
+It is indeed apparent that Sᴀᴍᴇ appears to correlate with each other much better than Dɪғғᴇʀᴇɴᴛ. The correlation among the Sᴀᴍᴇ stimuli is `r round(corSame$estimate,3)`, p=`r round(corSame$p.value,4)` and among Dɪғғᴇʀᴇɴᴛ stimuli is `r round(corDifferent$estimate,3)`, p=`r round(corDifferent$p.value,4)`  We can statistically test whether these are different from each other with the Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`. So these are indeed significantly different.
 
-Within the **Same** stimuli, we can also look at whether there is a difference when both are **Familiar** or both are **Unfamiliar**. That is shown below. 
+Within the Sᴀᴍᴇ stimuli, we can also look at whether there is a difference when both are Lᴇᴛᴛᴇʀ or both are Cᴏᴍᴘʟᴇx That is shown below. 
 
-```{r, echo=FALSE, fig.height=3.3, fig.width=8, fig.align='center'}
-First <- d$SL1correct[d$condition=="same" & d$SL1condition=="Familiar"]
-Second <- d$SL2correct[d$condition=="same" & d$SL2condition=="Familiar"]
+```{r, echo=FALSE, fig.height=3.3, fig.width=8, fig.align='center', message=FALSE, warning=FALSE}
+First <- d$SL1correct[d$condition=="same" & d$SL1condition=="Lᴇᴛᴛᴇʀ"]
+Second <- d$SL2correct[d$condition=="same" & d$SL2condition=="Lᴇᴛᴛᴇʀ"]
 same <- data.frame(First,Second)
 corSame = cor.test(First, Second, method="pearson")
 rSame = corSame$estimate
@@ -399,9 +480,9 @@ nSame = sum(complete.cases(First,Second))
 p1 <- ggscatter(same, x="First", y="Second", add="reg.line", cor.coef=TRUE, 
                 cor.method = "pearson", xlab = "Session 1", ylab="Session 2", size=2, 
                 cor.coef.coord=c(0.8,0.46))
-p1 <- p1 + ggtitle("Familiar stimuli") + theme(plot.title = element_text(hjust=0.5))
-First <- d$SL1correct[d$condition=="same" & d$SL1condition=="Unfamiliar"]
-Second <- d$SL2correct[d$condition=="same" & d$SL2condition=="Unfamiliar"]
+p1 <- p1 + ggtitle("Lᴇᴛᴛᴇʀ stimuli") + theme(plot.title = element_text(hjust=0.5))
+First <- d$SL1correct[d$condition=="same" & d$SL1condition=="Cᴏᴍᴘʟᴇx"]
+Second <- d$SL2correct[d$condition=="same" & d$SL2condition=="Cᴏᴍᴘʟᴇx"]
 different <- data.frame(First,Second)
 corDifferent = cor.test(First, Second, method="pearson")
 rDifferent = corDifferent$estimate
@@ -409,7 +490,7 @@ nDifferent = sum(complete.cases(First,Second))
 p2 <- ggscatter(different, x="First", y="Second", add="reg.line",
                 cor.coef=TRUE, cor.method = "pearson", xlab = "Session 1", ylab="Session 2",
                 size=2, cor.coef.coord=c(0.35,0.9))
-p2 <- p2 + ggtitle("Unfamiliar stimuli") + theme(plot.title = element_text(hjust=0.5))
+p2 <- p2 + ggtitle("Cᴏᴍᴘʟᴇx stimuli") + theme(plot.title = element_text(hjust=0.5))
 grid.arrange(p1,p2,ncol=2)
 
 # are these significant using fisher transformation
@@ -417,17 +498,18 @@ fisherZ = ((0.5*log((1+rSame)/(1-rSame)))-(0.5*log((1+rDifferent)/(1-rDifferent)
 fisherP = (2*(1-pnorm(abs(fisherZ))))
 ```
 
-It looks like the correlation is slightly larger with **Unfamiliar** stimuli. The Fisher r-to-z transformation shows: z=`r fisherZ`, p=`r fisherP` which means that this difference is not itself significant.
+It looks like the correlation is slightly larger with Cᴏᴍᴘʟᴇx stimuli. The Fisher r-to-z transformation shows: z=`r fisherZ`, p=`r fisherP` which means that this difference is not itself significant.
+
 
 # Relation of statistical learning to perceptual fluency
 
-Given the hypotheses of our study, we're also interested in determining whether performance on the perceptual fluency task predicts performance on the statistical learning task. If familiarity mediates this, we would expect that PFscore and SL score would be more highly correlated when the stimuli were the same and when they were different.
+Given the hypotheses of our study, we're also interested in determining whether performance on the perceptual fluency task predicts performance on the statistical learning task. If familiarity/complexity mediates this, we would expect that PFscore and SL score would be more highly correlated when the stimuli were the same and when they were different.
 
-The stimuli were only different for people in the DIFFERENT condition. Since I made it so the first PF task always used the stimuli from the first SL task, that means that comparing different stimuli involved comparing the first PF task to the second SL task and the second PF task to the first SL task. 
+The stimuli were only different for people in the Dɪғғᴇʀᴇɴᴛ condition. Since I made it so the first PF task always used the stimuli from the first SL task, that means that comparing different stimuli involved comparing the first PF task to the second SL task and the second PF task to the first SL task. 
 
-To make the correlation calculation for the same-stimuli equivalent, then, I focused on people in the SAME condition and the same trials (the first PF task to the second SL task and the second PF task to the first SL task). These results are shown below.
+To make the correlation calculation for the same-stimuli equivalent, then, I focused on people in the Sᴀᴍᴇ condition and the same trials (the first PF task to the second SL task and the second PF task to the first SL task). These results are shown below.
 
-```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', warning=FALSE}
+```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', message=FALSE, warning=FALSE}
 # first, get the different ones
 nd <- filter(d,condition=="different") %>%
   gather('PF1pauseavg','PF2pauseavg', key = "PFtype", value = "PFscore") %>%
@@ -448,12 +530,12 @@ same <- filter(ns,PFtype!=SLtype)
 p1 <- ggscatter(diff, x="PFscore", y="SLscore", add="reg.line", cor.coef=TRUE, 
                 size=2, cor.method = "pearson", xlab = "PFscore", 
                 ylab="SLscore",cor.coef.coord=c(230,0.8))
-p1 <- p1 + ggtitle("PF to SL: Different") + theme(plot.title = element_text(hjust=0.5))
+p1 <- p1 + ggtitle("PF to SL: Dɪғғᴇʀᴇɴᴛ") + theme(plot.title = element_text(hjust=0.5))
 
 p2 <- ggscatter(same, x="PFscore", y="SLscore", add="reg.line", cor.coef=TRUE, 
                 size=2, cor.method = "pearson", xlab = "PFscore", 
                 ylab="SLscore",cor.coef.coord=c(230,0.8))
-p2 <- p2 + ggtitle("PF to SL: Same") + theme(plot.title = element_text(hjust=0.5))
+p2 <- p2 + ggtitle("PF to SL: Sᴀᴍᴇ") + theme(plot.title = element_text(hjust=0.5))
 
 grid.arrange(p1,p2,ncol=2)
 
@@ -470,22 +552,23 @@ fisherP = (2*(1-pnorm(abs(fisherZ))))
 
 So having a shorter lag time on the perceptual fluency task is correlated with being more accurate on the statistical learning task. In addition, this relationship is stronger when the stimuli are the same than when they were different. This difference is itself non-signficant: Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`.
 
-For the same stimuli, we can break it down by whether they were **Familiar** or **Unfamiliar**. .
 
-```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', warning=FALSE}
+For the same stimuli, we can break it down by whether they were Lᴇᴛᴛᴇʀ or Cᴏᴍᴘʟᴇx.
+
+```{r, echo=FALSE, fig.height=2.5, fig.width=8, fig.align='center', message=FALSE, warning=FALSE}
 # now find the equivalent ones from the "same"" condition
-nsf <- filter(same,SL1condition=="Familiar")
-nsu <- filter(same,SL1condition=="Unfamiliar")
+nsf <- filter(same,SL1condition=="Lᴇᴛᴛᴇʀ")
+nsu <- filter(same,SL1condition=="Cᴏᴍᴘʟᴇx")
 
 p1 <- ggscatter(nsf, x="PFscore", y="SLscore", add="reg.line", cor.coef=TRUE, 
                 size=2, cor.method = "pearson", xlab = "PFscore", 
                 ylab="SLscore",cor.coef.coord=c(170,0.8))
-p1 <- p1 + ggtitle("PF to SL: Familiar") + theme(plot.title = element_text(hjust=0.5))
+p1 <- p1 + ggtitle("PF to SL: Lᴇᴛᴛᴇʀ") + theme(plot.title = element_text(hjust=0.5))
 
 p2 <- ggscatter(nsu, x="PFscore", y="SLscore", add="reg.line", cor.coef=TRUE, 
                 size=2, cor.method = "pearson", xlab = "PFscore", 
                 ylab="SLscore",cor.coef.coord=c(230,0.8))
-p2 <- p2 + ggtitle("PF to SL: Unfamiliar") + theme(plot.title = element_text(hjust=0.5))
+p2 <- p2 + ggtitle("PF to SL: Cᴏᴍᴘʟᴇx") + theme(plot.title = element_text(hjust=0.5))
 
 grid.arrange(p1,p2,ncol=2)
 
@@ -501,7 +584,8 @@ fisherP = (2*(1-pnorm(abs(fisherZ))))
 ```
 
 
-This is kind of interesting. It's cool that the PF test does a reasonable job predicting statistical learning performance. It's also interesting that the relationship exists mainly for the **Unfamiliar** stimuli (possibly because the **Familiar** ones are so overlearned there's less room for individual differences?). This difference is itself non-significant however: Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`.
+This is kind of interesting. It's cool that the PF test does a reasonable job predicting statistical learning performance. It's also interesting that the relationship exists mainly for the Cᴏᴍᴘʟᴇx stimuli (possibly because the Lᴇᴛᴛᴇʀ ones are so overlearned there's less room for individual differences?). This difference is itself non-significant however: Fisher r-to-z transformation: z=`r fisherZ`, p=`r fisherP`.
+
 
 It should be noted that the strength of the relationship between perceptual fluency and statistical learning is less strong than between statistical learning on two consecutive days, even when the stimuli are different. So that's an indication that there is some important component of statistical learning the perceptual fluency doesn't touch. Still, it's kind of impressive how much does just come down to perceptual fluency.
 
@@ -511,9 +595,9 @@ It should be noted that the strength of the relationship between perceptual flue
 
 ## Compare to simpler unknown stimuli
 
-Is this familiarity or complexity? Let's compare SL performance in the **Familiar** and **Unfamiliar** conditions to a condition that uses unfamiliar stimuli that are also substantially simpler visually. For this we ran 80 people on AMT in exactly the same experiment but with different stimuli, which again took 15-20 minutes and paid \$3.40USD. Before analysing the data 6 were excluded for getting less than three of the four words in the sequence right. This left `r nrow(d1novelA)` people in the dataset, in what well call the **unfSimple** condition (to contrast with the previous unfamiliar hard condition). In this condition, `r n1Amale` (i.e., `r round(100*n1Amale/nrow(d1novelA),1)`%) were male and `r n1Ausa` (i.e., `r round(100*n1Ausa/nrow(d1novelA),1)`%) were from the US. Ages ranged from `r min(d1novelA$age,na.rm=TRUE)` to `r max(d1novelA$age,na.rm=TRUE)` with a mean of `r round(mean(d1novelA$age,na.rm=TRUE),1)`.
+Is this familiarity or complexity? Let's compare SL performance in the Lᴇᴛᴛᴇʀ and Cᴏᴍᴘʟᴇx conditions to a condition that uses unfamiliar stimuli that are also substantially simpler visually. For this we ran 80 people on AMT in exactly the same experiment but with different stimuli, which again took 15-20 minutes and paid \$3.40USD. Before analysing the data 6 were excluded for getting less than three of the four words in the sequence right. This left `r nrow(d1novelA)` people in the dataset, in what well call the Sɪᴍᴘʟᴇ condition. In this condition, `r n1Amale` (i.e., `r round(100*n1Amale/nrow(d1novelA),1)`%) were male and `r n1Ausa` (i.e., `r round(100*n1Ausa/nrow(d1novelA),1)`%) were from the US. Ages ranged from `r min(d1novelA$age,na.rm=TRUE)` to `r max(d1novelA$age,na.rm=TRUE)` with a mean of `r round(mean(d1novelA$age,na.rm=TRUE),1)`.
 
-Is the accuracy different between conditions? To look at this we compare SL performance on all of the *first session* datasets (not like the one before for **Familiar** and **Unfamiliar**, which included both days). The reason we just look at first session is to make **unfSimple** comparable to the others, since it had only one session -- it doesn't matter much but seems more principled. Anyway, the result is shown below.
+Is the accuracy different between conditions? To look at this we compare SL performance on all of the *first session* datasets (not like the one before for Lᴇᴛᴛᴇʀ and Cᴏᴍᴘʟᴇx, which included both days). The reason we just look at first session is to make Sɪᴍᴘʟᴇ comparable to the others, since it had only one session -- it doesn't matter much but seems more principled. Anyway, the result is shown below.
 \vspace{10pt}
 ```{r, echo=FALSE, fig.height=3, fig.width=4.5, fig.align='center'}
 newd1 <- aggregate(d1all$SL1correct, by=list(condition = d1all$SL1condition), 
@@ -546,6 +630,9 @@ ggplot(data = newd1, aes(x = SL1condition, y = mean, fill = SL1condition)) +
         legend.position="none", #axis.text.x=element_blank(),
         panel.background = element_rect(fill = "white", colour = "black"))
 
+ggsave("figures/exp1_2_allconditions.png",device="png",
+       width=10,height=6, units="cm")
+
 ```
 \vspace{16pt}
 It looks like indeed there is a difference in performance. To evaluate this statistically we ran a one-way ANOVA with accuracy as our outcome variable and condition as predictor.
@@ -556,10 +643,16 @@ onat <- t.test(d1novelA$SL1correct,mu=16.75/42)
 donat <- cohensD(x=d1novelA$SL1correct,y=16.75/42)
 ## One-way ANOVA with correct as outcome and condition as predictor
 m <- aov(SL1correct ~ SL1condition, data=d1all)
+# Kruskal-test equivalent
+mk <- kruskal.test(SL1correct ~ SL1condition, data=d1all)
 ## Post-hoc tests
 tfa <- t.test(d1familiar$SL1correct,d1novelA$SL1correct)
 tfb <- t.test(d1familiar$SL1correct,d1novelB$SL1correct)
 tab <- t.test(d1novelA$SL1correct,d1novelB$SL1correct)
+## post-hoc Wilcoxon
+tfaw <- wilcox.test(d1familiar$SL1correct,d1novelA$SL1correct)
+tfbw <- wilcox.test(d1familiar$SL1correct,d1novelB$SL1correct)
+tabw <- wilcox.test(d1novelA$SL1correct,d1novelB$SL1correct)
 # effect size
 etam <- etaSquared(m)
 tfad <- cohensD(d1familiar$SL1correct,d1novelA$SL1correct)
@@ -567,6 +660,105 @@ tfbd <- cohensD(d1familiar$SL1correct,d1novelB$SL1correct)
 tabd <- cohensD(d1novelA$SL1correct,d1novelB$SL1correct)
 ```
 
-The results of the ANOVA are significant (F(`r summary(m)[[1]][["Df"]][1]`,`r summary(m)[[1]][["Df"]][2]`)=`r round(summary(m)[[1]][["F value"]][1],4)`, p=`r round(summary(m)[[1]][["Pr(>F)"]][1],4)`, etaSq = 0.0404). We did three post-hoc t-tests. The difference between **Familiar** and **unfSimple** was significant (t(`r round(tfa$parameter,1)`)=`r round(tfa$statistic,2)`, p=`r round(tfa$p.value,4)`, d=`r round(tfad,3)`), as was the difference between **Familiar** and **Unfamiliar** (t(`r round(tfb$parameter,1)`)=`r round(tfb$statistic,2)`, p=`r round(tfb$p.value,4)`, d=`r round(tfbd,3)`). However, the two unfamiliar conditions were not significantly different from each other (t(`r round(tab$parameter,1)`)=`r round(tab$statistic,2)`, p=`r round(tab$p.value,4)`, d=`r round(tabd,3)`).
+The results of the ANOVA are significant (F(`r summary(m)[[1]][["Df"]][1]`,`r summary(m)[[1]][["Df"]][2]`)=`r round(summary(m)[[1]][["F value"]][1],4)`, p=`r round(summary(m)[[1]][["Pr(>F)"]][1],4)`, etaSq = 0.0404). We did three post-hoc t-tests. The difference between Lᴇᴛᴛᴇʀ and Sɪᴍᴘʟᴇ was significant (t(`r round(tfa$parameter,1)`)=`r round(tfa$statistic,2)`, p=`r round(tfa$p.value,4)`, d=`r round(tfad,3)`), as was the difference between Lᴇᴛᴛᴇʀ and Cᴏᴍᴘʟᴇx (t(`r round(tfb$parameter,1)`)=`r round(tfb$statistic,2)`, p=`r round(tfb$p.value,4)`, d=`r round(tfbd,3)`). However, the two complex conditions were not significantly different from each other (t(`r round(tab$parameter,1)`)=`r round(tab$statistic,2)`, p=`r round(tab$p.value,4)`, d=`r round(tabd,3)`).
 
+We find the same result when we do the equivalent non-parametric tests. A Kruskal-Wallis found a significant effect of condition, X^2^=`r round(mk$statistic[[1]],2)`, p=`r round(mk$p.value,4)`. Post-hoc pairwise tests with the Wilcoxon found a significant difference between Lᴇᴛᴛᴇʀ and Sɪᴍᴘʟᴇ 
+(W=`r tfaw$statistic[[1]]`, p=`r round(tfaw$p.value,4)`) and Lᴇᴛᴛᴇʀ and Cᴏᴍᴘʟᴇx (W=`r tfbw$statistic[[1]]`, p=`r round(tfbw$p.value,4)`) but not Cᴏᴍᴘʟᴇx and Sɪᴍᴘʟᴇ (W=`r tabw$statistic[[1]]`, p=`r round(tabw$p.value,4)`).
 
+# Double-checking analyses using only first session
+
+Unless explicitly noted otherwise, all of the previous analyses pooled together the scores from the first and second session. In order to be sure, here we redo everything using just the scores from the first person (on the reasoning that it is most like other studies). 
+
+\vspace{16pt}
+```{r, echo=FALSE, fig.height=3, fig.width=4, fig.align='center', message=FALSE, warning=FALSE}
+dl <- dl %>% filter(session==1)
+
+newdl <- dplyr::group_by(dl,SLcondition) %>% 
+  summarise(mean=mean(SLcorrect,na.rm = TRUE),
+            sd = sd(SLcorrect,na.rm=TRUE),
+            n = n(),
+            se = sd(SLcorrect,na.rm=TRUE)/sqrt(n()))
+
+ggplot(data = newdl, aes(x = SLcondition, y = mean, fill = SLcondition)) +
+  geom_point(data=dl,aes(x = SLcondition, y = SLcorrect, colour=SLcondition), 
+             position="jitter", alpha=0.6, show.legend=FALSE) +
+  scale_colour_manual(values=c(easyColour,hardColour)) +
+  geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
+  labs(y = "SLscore") + 
+  ggtitle("(a) Statistical learning") +
+  coord_cartesian(ylim=c(0.3,1.0)) +
+  scale_fill_manual(values=c(easyColour,hardColour)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+
+ggsave("figures/exp1_2_slaccuracy_s1.png",device="png",
+       width=8,height=6, units="cm")
+```
+\vspace{16pt}
+It looks like indeed there is a difference in performance. To evaluate this statistically we ran a t-test with accuracy as our outcome variable and condition as predictor. 
+
+```{r echo=FALSE, results="hide"}
+tt <- t.test(SLcorrect ~ SLcondition, data=dl)
+ttd <- cohensD(SLcorrect ~ SLcondition, data=dl)
+bf <- ttestBF(formula = SLcorrect ~ SLcondition, data=dl)
+reportedBF <- exp(1)^bf@bayesFactor$bf
+wt <- wilcox.test(SLcorrect ~ SLcondition, data=dl)
+# compare to chance
+oet <- t.test(dl$SLcorrect[dl$SLcondition=="Cᴏᴍᴘʟᴇx"],mu=16.75/42)
+doet <- cohensD(x=dl$SLcorrect[dl$SLcondition=="Cᴏᴍᴘʟᴇx"],y=16.75/42)
+oht <- t.test(dl$SLcorrect[dl$SLcondition=="Lᴇᴛᴛᴇʀ"],mu=16.75/42)
+doht <- cohensD(x=dl$SLcorrect[dl$SLcondition=="Lᴇᴛᴛᴇʀ"],y=16.75/42)
+oewt <- wilcox.test(dl$SLcorrect[dl$SLcondition=="Cᴏᴍᴘʟᴇx"],mu=16.75/42)
+ohwt <- wilcox.test(dl$SLcorrect[dl$SLcondition=="Lᴇᴛᴛᴇʀ"],mu=16.75/42)
+```
+
+Performance in both conditions is different from chance when chance is calculated as 16.75/42 (Lᴇᴛᴛᴇʀ: t(`r round(oht$parameter,1)`)= `r round(oht$statistic,2)`, p=`r round(oht$p.value,4)`, d=`r round(doht,3)`; Cᴏᴍᴘʟᴇx: t(`r round(oet$parameter,1)`)= `r round(oet$statistic,2)`, p=`r round(oet$p.value,4)`, d=`r round(doet,3)`). We find the same thing if we use a non-parametric alternative to the t-test, the Wilcoxon: Lᴇᴛᴛᴇʀ: V=`r ohwt$statistic[[1]]`, p=`r round(ohwt$p.value,4)`; Cᴏᴍᴘʟᴇx: V=`r oewt$statistic[[1]]`, p=`r round(oewt$p.value,4)`.
+
+The results of the t-test are also significant (t(`r round(tt$parameter,1)`)=`r round(tt$statistic,2)`, p=`r round(tt$p.value,4)`, d=`r round(ttd,3)`), and this doesn't change if we use a Wilcoxon instead: W=`r wt$statistic[[1]]`, p=`r round(wt$p.value,4)`. A Bayesian t-test with default priors for effect size finds that the data were `r reportedBF` in favour of the alternative hypothesis (i.e., were `r reportedBF` times more likely to occur under the model that performance is different by condition).
+
+Let's also look at perceptual fluency in just the first session.
+
+```{r, echo=FALSE, fig.height=3, fig.width=4, fig.align='center', message=FALSE, warning=FALSE}
+dplyr::group_by(dl,PFtype) %>% 
+  summarise(mean=mean(PFpauseavg,na.rm = TRUE),
+            sd = sd(PFpauseavg,na.rm=TRUE),
+            n = n(),
+            se = sd(PFpauseavg,na.rm=TRUE)/sqrt(n()))
+
+ggplot(data = pf, aes(x = PFtype, y = mean, fill = PFtype)) +
+  geom_point(data=dl,aes(x = PFtype, y = PFpauseavg, colour=PFtype), 
+             position="jitter", alpha=0.6, show.legend=FALSE) +
+  scale_colour_manual(values=c(easyColour,hardColour)) +
+  geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), position = dodge, width = 0.25) + 
+  labs(y = "PFscore") + 
+  ggtitle("PF by condition") +
+  coord_cartesian(ylim=c(50,200)) +
+  scale_fill_manual(values=c(easyColour,hardColour)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+
+ggsave("figures/exp1_2_pfbycond_s1.png",device="png",
+       width=8,height=6, units="cm")
+```
+
+\vspace{16pt}
+```{r echo=FALSE, results="hide", warning=FALSE, message=FALSE}
+## t-tests
+pfc <- t.test(dl$PFpauseavg[dl$PFtype=="Lᴇᴛᴛᴇʀ"],dl$PFpauseavg[dl$PFtype=="Cᴏᴍᴘʟᴇx"])
+pfcd <- cohensD(dl$PFpauseavg[dl$PFtype=="Lᴇᴛᴛᴇʀ"],dl$PFpauseavg[dl$PFtype=="Cᴏᴍᴘʟᴇx"])
+pfcw <- wilcox.test(dl$PFpauseavg[dl$PFtype=="Lᴇᴛᴛᴇʀ"],dl$PFpauseavg[dl$PFtype=="Cᴏᴍᴘʟᴇx"])
+```
+
+Is this significant? In order to evaluate this, I ran t-tests looking at lagtime by condition. Condition was significant (t(`r round(pfc$parameter,1)`)=`r round(pfc$statistic,2)`, p=0.0006, d=`r round(pfcd,3)`). We get the same results if we run a Wilcoxon: condition W=`r pfcw$statistic[[1]]`, p=`r round(pfcw$p.value,4)`.

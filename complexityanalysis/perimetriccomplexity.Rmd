@@ -1,0 +1,133 @@
+---
+title: "perimetriccomplexity"
+author: "Andrew"
+date: "20/09/2021"
+output: html_document
+---
+
+This shows perimetric complexity based on the calculations from Mathemetica as in Watson et al (2012).
+
+
+```{r setup, include=FALSE}
+# We'll begin by loading up the libraries and data we need, as always.
+knitr::opts_chunk$set(echo = TRUE)
+
+# loading the libraries
+library(tidyverse)
+library(here)
+library(ggplot2)
+library(gridExtra)
+dodge <- position_dodge(width = 0.9)
+
+# load the data 
+d <- read.csv(file=here("complexity.csv")) %>% as_tibble()
+d$name <- as.factor(d$name)
+d$type <- as.factor(d$type)
+d$experiment <- as.factor(d$experiment)
+levels(d$type) <- c("Cʜɪɴᴇsᴇ","Lᴇᴛᴛᴇʀ","Sɪᴍᴘʟᴇ","Cᴏᴍᴘʟᴇx")
+
+chineseColour <- "#00AAFF"
+unfamiliarColour <- "#000099"
+familiarColour <- "#00AAFF"
+simpleColour <- "springgreen3"
+
+d_sum <- d %>%
+  group_by(type) %>% 
+  summarise(mean=mean(complexity,na.rm = TRUE),
+            sd = sd(complexity,na.rm=TRUE),
+            n = n(),
+            se = sd(complexity,na.rm=TRUE)/sqrt(n()))
+
+first <- d %>%
+  filter(type == "Lᴇᴛᴛᴇʀ" | type=="Cᴏᴍᴘʟᴇx")
+second <- d %>%
+  filter(type != "Cʜɪɴᴇsᴇ")
+third <- d %>% 
+  filter(experiment=="3")
+```
+
+## Statistical tests
+
+
+```{r pressure, echo=FALSE}
+print(d_sum)
+
+# comparing all of them
+summary(aov(complexity ~ type, data=d))
+
+# first experiment
+t.test(complexity ~ type, data=first)
+
+# second experiment
+t.test(d$complexity[d$type=="Lᴇᴛᴛᴇʀ"],d$complexity[d$type=="Sɪᴍᴘʟᴇ"])
+t.test(d$complexity[d$type=="Cᴏᴍᴘʟᴇx"],d$complexity[d$type=="Sɪᴍᴘʟᴇ"])
+
+# third experiment
+t.test(complexity ~ type, data=third)
+```
+
+
+# Figures
+
+```{r figures}
+d_second_sum <- second %>%
+  group_by(type) %>% 
+  summarise(mean=mean(complexity,na.rm = TRUE),
+            sd = sd(complexity,na.rm=TRUE),
+            n = n(),
+            se = sd(complexity,na.rm=TRUE)/sqrt(n()))
+
+ggplot(data = d_second_sum, 
+       aes(x = type, y = mean, fill = type)) +
+  geom_point(data=second,
+             aes(x = type, y = complexity, colour=type), 
+             position="jitter", alpha=0.6, show.legend=FALSE) +
+  scale_colour_manual(values=c(familiarColour,simpleColour,unfamiliarColour)) +
+  geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
+                position = dodge, width = 0.25) + 
+  labs(y = "perimetric complexity") + 
+  ggtitle("Stimulus complexity") +
+  scale_fill_manual(values=c(familiarColour,simpleColour,unfamiliarColour)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+
+ggsave("exp1_2_complexity.png",device="png",
+       width=8,height=6, units="cm")
+
+
+d_third_sum <- third %>%
+  group_by(type) %>% 
+  summarise(mean=mean(complexity,na.rm = TRUE),
+            sd = sd(complexity,na.rm=TRUE),
+            n = n(),
+            se = sd(complexity,na.rm=TRUE)/sqrt(n()))
+
+ggplot(data = d_third_sum, 
+       aes(x = type, y = mean, fill = type)) +
+  geom_point(data=third,
+             aes(x = type, y = complexity, colour=type), 
+             position="jitter", alpha=0.6, show.legend=FALSE) +
+  scale_colour_manual(values=c(chineseColour,unfamiliarColour)) +
+  geom_bar(stat = "identity", position = dodge, colour="black", alpha=0.5) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
+                position = dodge, width = 0.25) + 
+  labs(y = "perimetric complexity") + 
+  ggtitle("Stimulus complexity") +
+  scale_fill_manual(values=c(chineseColour,unfamiliarColour)) +
+  theme(axis.text.y=element_text(size = rel(0.9)),
+        axis.text.x=element_text(size = rel(1.2)), #axis.ticks.x=element_blank(),
+        axis.title.x=element_blank(),
+        plot.title = element_text(size = rel(1.3)),
+        axis.title.y=element_text(size = rel(1.1)),
+        legend.position="none", #axis.text.x=element_blank(),
+        panel.background = element_rect(fill = "white", colour = "black"))
+
+ggsave("exp3_complexity.png",device="png",
+       width=8,height=6, units="cm")
+```
